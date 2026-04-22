@@ -75,7 +75,11 @@ export const AuthProvider = ({ children }) => {
     if (!user) {
       throw new Error('No authenticated user');
     }
-    return await user.getIdToken();
+    
+    // Get fresh token and update localStorage
+    const token = await user.getIdToken();
+    localStorage.setItem('authToken', token);
+    return token;
   };
 
   useEffect(() => {
@@ -86,8 +90,23 @@ export const AuthProvider = ({ children }) => {
       return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
+      
+      // Store or remove auth token in localStorage
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          localStorage.setItem('authToken', token);
+          console.log('Auth token stored in localStorage');
+        } catch (error) {
+          console.error('Error getting auth token:', error);
+        }
+      } else {
+        localStorage.removeItem('authToken');
+        console.log('Auth token removed from localStorage');
+      }
+      
       setLoading(false);
     });
 

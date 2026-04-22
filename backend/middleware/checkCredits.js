@@ -6,7 +6,10 @@ export const checkCredits = async (req, res, next) => {
     // Get the Firebase ID token from the Authorization header
     const authHeader = req.headers.authorization;
     
+    console.log('Auth header received:', authHeader ? 'Present' : 'Missing');
+    
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.log('No valid Bearer token found in headers');
       return res.status(401).json({
         success: false,
         message: 'Authorization token required'
@@ -14,11 +17,14 @@ export const checkCredits = async (req, res, next) => {
     }
 
     const token = authHeader.split('Bearer ')[1];
+    console.log('Token extracted, length:', token.length);
     
     // Verify the Firebase ID token
     const { auth } = await import('../firebaseAdmin.js');
     const decodedToken = await auth.verifyIdToken(token);
     const uid = decodedToken.uid;
+    
+    console.log('Token verified successfully for uid:', uid);
 
     // Check user credits
     const credits = await checkUserCredits(uid);
