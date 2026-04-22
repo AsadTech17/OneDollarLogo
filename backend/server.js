@@ -148,5 +148,10 @@ if (process.env.NODE_ENV !== 'production') {
   });
 }
 
+// File ke akhir mein ye add karein
+app.get("/", (req, res) => {
+  res.send("API is working");
+});
+
 // Export for Vercel serverless
 export default app;
