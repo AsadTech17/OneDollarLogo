@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
+import { useAuth } from "../contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
+import api from "../api/axios";
 
 const Pricing = () => {
   const [userCredits, setUserCredits] = useState(0);
@@ -21,19 +23,9 @@ const Pricing = () => {
       if (!user) return;
       
       try {
-        const idToken = await getIdToken();
-        const response = await fetch('http://localhost:5000/api/credits/balance', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await api.get('/api/credits/balance');
         
-        const result = await response.json();
-        if (result.success) {
-          setUserCredits(result.data.credits);
-        }
+        setUserCredits(response.data.credits || 0);
       } catch (error) {
         console.error('Error fetching user credits:', error);
       }
@@ -54,24 +46,14 @@ const Pricing = () => {
     setMessage('');
 
     try {
-      const idToken = await getIdToken();
-      const response = await fetch('http://localhost:5000/api/credits/buy-pack', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${idToken}`,
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ packId })
-      });
+      const response = await api.post('/api/credits/buy-pack', { packId });
 
-      const result = await response.json();
-      
-      if (result.success) {
-        setUserCredits(result.data.totalCredits);
-        setMessage(`${result.data.packName} purchased successfully! You now have ${result.data.totalCredits} credits.`);
+      if (response.data.success) {
+        setUserCredits(response.data.totalCredits);
+        setMessage(`${response.data.packName} purchased successfully! You now have ${response.data.totalCredits} credits.`);
         setSelectedPack(null);
       } else {
-        setMessage(result.message || 'Failed to purchase credit pack');
+        setMessage(response.data.message || 'Failed to purchase credit pack');
       }
     } catch (error) {
       console.error('Error purchasing credit pack:', error);

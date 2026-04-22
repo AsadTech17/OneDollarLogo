@@ -1,8 +1,6 @@
 import { createContext, useContext, useEffect, useState, useMemo } from 'react';
 import { auth, onAuthStateChanged, signInWithPopup, googleProvider } from '../lib/firebase';
-
-// Centralized API base URL
-const API_BASE_URL = 'http://localhost:5000';
+import api from '../api/axios';
 
 const AuthContext = createContext();
 

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, User, LogOut, ChevronDown, Image, Clock } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
+import api from "../api/axios";
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -18,18 +19,10 @@ const Navbar = () => {
       if (!user) return;
       
       try {
-        const idToken = await getIdToken();
-        const response = await fetch('http://localhost:5000/api/credits/balance', {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${idToken}`,
-            'Content-Type': 'application/json'
-          }
-        });
+        const response = await api.get('/api/credits/balance');
         
-        const result = await response.json();
-        if (result.success) {
-          setUserCredits(result.data.credits);
+        if (response.data.success) {
+          setUserCredits(response.data.credits);
         }
       } catch (error) {
         console.error('Error fetching user credits:', error);

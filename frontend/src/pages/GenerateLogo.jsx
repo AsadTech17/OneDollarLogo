@@ -2,11 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Download } from "lucide-react";
+import api from "../api/axios";
 import LoginModal from "../components/LoginModal";
 import UnlockModal from "../components/UnlockModal";
-
-// Centralized API base URL
-const API_BASE_URL = "http://localhost:5000";
 
 // Offensive keywords for validation
 const OFFENSIVE_KEYWORDS = [
@@ -298,18 +296,9 @@ const GenerateLogo = () => {
       // Get Firebase ID token for authentication
       const idToken = await getIdToken();
 
-      const response = await fetch(`${API_BASE_URL}/api/generate-logo`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${idToken}`,
-        },
-        body: JSON.stringify({
-          businessIdea: businessIdea.trim(),
-        }),
-      });
+      const response = await api.post('/api/generate-logo', { businessIdea: businessIdea.trim() });
 
-      const result = await response.json();
+      const result = response.data;
 
       if (result.success) {
         setGeneratedLogos(result.data);
@@ -468,12 +457,18 @@ const GenerateLogo = () => {
         console.log('⚠️ CORS error, trying backend proxy:', corsError.message);
         
         // Fallback to backend proxy for CORS issues
-        const proxyUrl = `${API_BASE_URL}/api/download-image?url=${encodeURIComponent(imageUrl)}`;
-        response = await fetch(proxyUrl);
+        const proxyUrl = `/api/download-image?url=${encodeURIComponent(imageUrl)}`;
+        const proxyResponse = await api.get(proxyUrl, { responseType: 'blob' });
         
-        if (!response.ok) {
-          throw new Error(`Backend proxy failed: HTTP ${response.status}`);
+        if (!proxyResponse.status) {
+          throw new Error(`Backend proxy failed: HTTP ${proxyResponse.status}`);
         }
+        
+        // Create a mock Response object from axios response
+        response = {
+          ok: true,
+          blob: () => Promise.resolve(proxyResponse.data)
+        };
       }
       
       // Convert to blob

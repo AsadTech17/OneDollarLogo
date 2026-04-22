@@ -2,6 +2,7 @@
 /** @type {import('react').StateSetter<string>} */
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import api from "../api/axios";
 
 const Pricing = () => {
   const { user, isAuthenticated, getIdToken } = useAuth();
@@ -22,22 +23,9 @@ const Pricing = () => {
     setShowSuccess(false);
 
     try {
-      const idToken = await getIdToken();
-      const response = await fetch(
-        "http://localhost:5000/api/credits/buy-pack",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${idToken}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ packId }),
-        },
-      );
+      const response = await api.post('/api/credits/buy-pack', { packId });
 
-      const result = await response.json();
-
-      if (result.success) {
+      if (response.data.success) {
         setShowSuccess(true);
         const selectedPack = creditPacks.find(p => p.packId === packId);
         const packName = selectedPack?.name || 'Credit Pack';
