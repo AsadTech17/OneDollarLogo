@@ -25,7 +25,7 @@ const Pricing = () => {
       try {
         const response = await api.get('/api/credits/balance');
         
-        setUserCredits(response.data.credits || 0);
+        setUserCredits(response.data.data?.credits || 0);
       } catch (error) {
         console.error('Error fetching user credits:', error);
       }
@@ -49,8 +49,8 @@ const Pricing = () => {
       const response = await api.post('/api/credits/buy-pack', { packId });
 
       if (response.data.success) {
-        setUserCredits(response.data.totalCredits);
-        setMessage(`${response.data.packName} purchased successfully! You now have ${response.data.totalCredits} credits.`);
+        setUserCredits(response.data.data?.totalCredits || 0);
+        setMessage(`${response.data.data?.packName || 'Credit Pack'} purchased successfully! You now have ${response.data.data?.totalCredits || 0} credits.`);
         setSelectedPack(null);
       } else {
         setMessage(response.data.message || 'Failed to purchase credit pack');

@@ -153,7 +153,7 @@ const GenerateLogo = () => {
       const response = await api.get('/api/credits/balance');
 
       if (response.data.success) {
-        setUserCredits(response.data.credits);
+        setUserCredits(response.data.data?.credits || 0);
       }
     } catch (error) {
       console.error("Error fetching user credits:", error);
@@ -169,7 +169,7 @@ const GenerateLogo = () => {
       const response = await api.post('/api/credits/unlock-logo', { generationId: unlockData.generationId });
 
       if (response.data.success) {
-        setUserCredits(response.data.credits || 0);
+        setUserCredits(response.data.data?.credits || 0);
         if (unlockData.logoId) {
           setUnlockedLogos((prev) => new Set([...prev, unlockData.logoId]));
         }

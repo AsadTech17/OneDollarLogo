@@ -22,7 +22,7 @@ const Navbar = () => {
         const response = await api.get('/api/credits/balance');
         
         if (response.data.success) {
-          setUserCredits(response.data.credits);
+          setUserCredits(response.data.data?.credits || 0);
         }
       } catch (error) {
         console.error('Error fetching user credits:', error);
