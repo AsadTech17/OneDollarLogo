@@ -34,12 +34,29 @@ const logoGenerationLimiter = rateLimit({
 
 // Middleware
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    'http://localhost:5173',
-    'https://your-vercel-frontend-url.vercel.app', // Replace with actual Vercel URL
-    process.env.FRONTEND_URL // Environment variable for production
-  ].filter(Boolean),
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // In production, only allow the configured frontend URL
+    if (process.env.NODE_ENV === 'production') {
+      if (origin === process.env.FRONTEND_URL) {
+        return callback(null, true);
+      } else {
+        return callback(new Error('Not allowed by CORS'));
+      }
+    }
+    
+    // In development, allow localhost
+    if (process.env.NODE_ENV !== 'production') {
+      const allowedOrigins = ['http://localhost:3000', 'http://localhost:5173'];
+      if (allowedOrigins.includes(origin)) {
+        return callback(null, true);
+      }
+    }
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
@@ -123,8 +140,13 @@ app.get('/api/download-image', async (req, res) => {
   }
 });
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`Logo generation endpoint: http://localhost:${PORT}/api/generate-logo`);
-});
+// Start server only for local development
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`Logo generation endpoint: http://localhost:${PORT}/api/generate-logo`);
+  });
+}
+
+// Export for Vercel serverless
+export default app;
