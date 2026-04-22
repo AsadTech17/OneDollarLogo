@@ -1,62 +1,125 @@
 import { useState } from 'react';
 
-// Gallery data with 8 sample logos
+// Gallery data with 17 new logos from public folder
 const galleryData = [
   {
     id: 1,
-    title: 'TechFlow Solutions',
+    title: 'TechStart',
     category: 'Tech',
-    imageUrl: 'https://picsum.photos/seed/tech1/400/400',
-    description: 'Modern tech startup logo'
+    imageUrl: '/Logo1 (1).png',
+    description: 'Innovative tech startup'
   },
   {
     id: 2,
-    title: 'Fresh Bites Cafe',
+    title: 'Creams Cafe',
     category: 'Food',
-    imageUrl: 'https://picsum.photos/seed/food1/400/400',
-    description: 'Organic restaurant branding'
+    imageUrl: '/Logo1 (2).png',
+    description: 'Artisan coffee shop'
   },
   {
     id: 3,
-    title: 'Style Forward',
+    title: 'Kaes',
     category: 'Fashion',
-    imageUrl: 'https://picsum.photos/seed/fashion1/400/400',
-    description: 'Fashion boutique logo'
+    imageUrl: '/Logo1 (3).png',
+    description: 'Modern fashion brand'
   },
   {
     id: 4,
     title: 'MediCare Plus',
     category: 'Health',
-    imageUrl: 'https://picsum.photos/seed/health1/400/400',
-    description: 'Healthcare service logo'
+    imageUrl: '/Logo1 (4).png',
+    description: 'Healthcare service'
   },
   {
     id: 5,
     title: 'CloudSync Pro',
     category: 'Tech',
-    imageUrl: 'https://picsum.photos/seed/tech2/400/400',
-    description: 'Cloud computing platform'
+    imageUrl: '/Logo1 (5).png',
+    description: 'Cloud platform'
   },
   {
     id: 6,
     title: 'Green Harvest',
     category: 'Food',
-    imageUrl: 'https://picsum.photos/seed/food2/400/400',
-    description: 'Sustainable farming brand'
+    imageUrl: '/Logo1 (6).png',
+    description: 'Organic farming'
   },
   {
     id: 7,
     title: 'Elegance Wear',
     category: 'Fashion',
-    imageUrl: 'https://picsum.photos/seed/fashion2/400/400',
-    description: 'Luxury fashion brand'
+    imageUrl: '/Logo1 (7).png',
+    description: 'Luxury apparel'
   },
   {
     id: 8,
     title: 'Wellness Hub',
     category: 'Health',
-    imageUrl: 'https://picsum.photos/seed/health2/400/400',
-    description: 'Wellness center logo'
+    imageUrl: '/Logo1 (8).png',
+    description: 'Wellness center'
+  },
+  {
+    id: 9,
+    title: 'DataFlow',
+    category: 'Tech',
+    imageUrl: '/Logo1 (9).png',
+    description: 'Data analytics'
+  },
+  {
+    id: 10,
+    title: 'Bistro Fresh',
+    category: 'Food',
+    imageUrl: '/Logo1 (10).png',
+    description: 'Fresh cuisine'
+  },
+  {
+    id: 11,
+    title: 'StyleCraft',
+    category: 'Fashion',
+    imageUrl: '/Logo1 (11).png',
+    description: 'Fashion design'
+  },
+  {
+    id: 12,
+    title: 'HealthFirst',
+    category: 'Health',
+    imageUrl: '/Logo1 (12).png',
+    description: 'Medical care'
+  },
+  {
+    id: 13,
+    title: 'CodeMaster',
+    category: 'Tech',
+    imageUrl: '/Logo1 (13).png',
+    description: 'Development tools'
+  },
+  {
+    id: 14,
+    title: 'Taste Haven',
+    category: 'Food',
+    imageUrl: '/Logo1 (14).png',
+    description: 'Gourmet experience'
+  },
+  {
+    id: 15,
+    title: 'Chic Style',
+    category: 'Fashion',
+    imageUrl: '/Logo1 (15).png',
+    description: 'Fashion boutique'
+  },
+  {
+    id: 16,
+    title: 'CarePlus',
+    category: 'Health',
+    imageUrl: '/Logo1 (16).png',
+    description: 'Healthcare services'
+  },
+  {
+    id: 17,
+    title: 'TechNova',
+    category: 'Tech',
+    imageUrl: '/Logo1 (17).png',
+    description: 'Tech innovation'
   }
 ];
 
@@ -65,9 +128,13 @@ const categories = ['All', 'Tech', 'Food', 'Fashion', 'Health'];
 const ExamplesGallery = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [filteredData, setFilteredData] = useState(galleryData);
+  const [currentPage, setCurrentPage] = useState(0);
+  const itemsPerPage = 8;
+  const totalPages = Math.ceil(filteredData.length / itemsPerPage);
 
   const handleFilterChange = (category) => {
     setActiveFilter(category);
+    setCurrentPage(0); // Reset to first page when filter changes
     
     if (category === 'All') {
       setFilteredData(galleryData);
@@ -76,13 +143,32 @@ const ExamplesGallery = () => {
     }
   };
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+  };
+
+  const handlePrevPage = () => {
+    setCurrentPage(prev => Math.max(0, prev - 1));
+  };
+
+  const handleNextPage = () => {
+    setCurrentPage(prev => Math.min(totalPages - 1, prev + 1));
+  };
+
+  const getCurrentPageItems = () => {
+    const startIndex = currentPage * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    return filteredData.slice(startIndex, endIndex);
+  };
+
+
   return (
-    <section id="examples" className="py-20 bg-gradient-to-br from-purple-50 to-white">
+    <section id="examples" className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-            Logo Examples Gallery
+            Example Gallery
           </h2>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             See professional logos generated by our AI in seconds
@@ -97,8 +183,8 @@ const ExamplesGallery = () => {
               onClick={() => handleFilterChange(category)}
               className={`px-6 py-2 rounded-full font-medium transition-all duration-200 ${
                 activeFilter === category
-                  ? 'bg-purple-600 text-white shadow-lg transform scale-105'
-                  : 'bg-white text-gray-700 hover:bg-purple-100 border border-purple-200'
+                  ? 'bg-blue-600 text-white shadow-md transform scale-105'
+                  : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
               }`}
             >
               {category}
@@ -107,40 +193,34 @@ const ExamplesGallery = () => {
         </div>
 
         {/* Gallery Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {filteredData.map((item, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+          {getCurrentPageItems().map((item, index) => (
             <div
               key={item.id}
-              className="group relative bg-white rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-105 overflow-hidden animate-fade-in"
+              className="group relative bg-white rounded-2xl shadow-md overflow-hidden border border-gray-100 hover:scale-105 transition-transform duration-300 ease-in-out"
             >
               {/* Logo Image */}
-              <div className="aspect-square relative overflow-hidden bg-gradient-to-br from-purple-50 to-blue-50 p-8">
+              <div className="aspect-square relative overflow-hidden bg-gray-50 p-6">
                 <img
                   src={item.imageUrl}
                   alt={item.title}
-                  className="w-full h-full object-contain transition-transform duration-300 group-hover:scale-110"
+                  className="w-full h-full object-contain"
                 />
                 
-                {/* Hover Overlay - Hidden by default */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end">
-                  <div className="p-4 text-white">
-                    <p className="text-sm font-medium">Generated in 8 seconds</p>
-                  </div>
-                </div>
               </div>
 
               {/* Card Content */}
-              <div className="p-6">
+              <div className="p-4">
                 <div className="flex items-center justify-between mb-2">
-                  <span className="inline-block px-3 py-1 bg-purple-100 text-purple-700 text-xs font-medium rounded-full">
+                  <span className="inline-block px-2 py-1 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">
                     {item.category}
                   </span>
                   <div className="flex items-center text-gray-400">
-                    <svg className="w-4 h-4 mr-1" fill="currentColor" viewBox="0 0 20 20">
+                    <svg className="w-3 h-3 mr-1" fill="currentColor" viewBox="0 0 20 20">
                       <path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/>
                       <path fillRule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clipRule="evenodd"/>
                     </svg>
-                    <span className="text-xs">1.2k</span>
+                    <span className="text-xs">View</span>
                   </div>
                 </div>
                 <h3 className="font-semibold text-gray-900 text-sm mb-1">{item.title}</h3>
@@ -150,18 +230,60 @@ const ExamplesGallery = () => {
           ))}
         </div>
 
+        {/* Pagination */}
+        {totalPages > 1 && (
+          <div className="flex items-center justify-center space-x-4 mt-8">
+            {/* Previous Button */}
+            <button
+              onClick={handlePrevPage}
+              disabled={currentPage === 0}
+              className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+            </button>
+
+            {/* Page Dots */}
+            <div className="flex space-x-2">
+              {Array.from({ length: totalPages }, (_, index) => (
+                <button
+                  key={index}
+                  onClick={() => handlePageChange(index)}
+                  className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                    currentPage === index
+                      ? 'bg-blue-600 w-8'
+                      : 'bg-gray-300 hover:bg-gray-400'
+                  }`}
+                />
+              ))}
+            </div>
+
+            {/* Next Button */}
+            <button
+              onClick={handleNextPage}
+              disabled={currentPage === totalPages - 1}
+              className="w-10 h-10 rounded-full bg-white shadow-md flex items-center justify-center text-gray-600 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            >
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </button>
+          </div>
+        )}
+
         {/* Call to Action */}
         <div className="text-center mt-16">
-          <div className="bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl p-8 text-white">
-            <h3 className="text-2xl font-bold mb-4">
+          <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl p-8 shadow-lg">
+            <h3 className="text-2xl font-bold text-white mb-4">
               Ready to Create Your Logo?
             </h3>
-            <p className="text-purple-100 mb-6 max-w-2xl mx-auto">
+            <p className="text-white mb-6 max-w-2xl mx-auto opacity-90">
               Join thousands of businesses who have created professional logos with our AI-powered platform
             </p>
             <button
               onClick={() => window.location.href = '/generate'}
-              className="bg-white text-purple-600 font-bold py-3 px-8 rounded-lg hover:bg-gray-100 transition-colors duration-200 transform hover:scale-105 shadow-lg"
+              className="bg-white hover:bg-gray-100 text-gray-900 font-bold py-3 px-8 rounded-lg transition-colors duration-200 transform hover:scale-105 shadow-lg"
             >
               Start Creating Now
             </button>

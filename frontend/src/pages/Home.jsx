@@ -1,22 +1,30 @@
 import Hero from '../components/Hero'
+import ComparisonSection from '../components/ComparisonSection'
 import HowItWorks from '../components/HowItWorks'
 import ExamplesGallery from '../components/ExamplesGallery'
 import Pricing from '../components/Pricing'
 import WebsiteBundle from '../components/WebsiteBundle'
 import OfferTiers from '../components/OfferTiers'
+import FeaturesComparison from '../components/FeaturesComparison'
 import FAQ from '../components/FAQ'
+import VisualDivider from '../components/VisualDivider'
 // import Contact from '../components/Contact' // Moved to dedicated ContactPage
 
 const Home = () => {
   return (
     <div className="min-h-screen bg-white">
       <Hero />
+      <ComparisonSection />
       <HowItWorks />
       <ExamplesGallery />
-      <Pricing />
+      <div id="pricing-section">
+        <Pricing />
+      </div>
       <WebsiteBundle />
       <OfferTiers />
+      <FeaturesComparison />
       <FAQ />
+      <VisualDivider />
     </div>
   );
 };

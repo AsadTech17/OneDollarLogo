@@ -43,14 +43,14 @@ const OfferTiers = () => {
   ];
 
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-800 to-blue-800">
+    <section className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="text-center mb-16">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             How to Spend Your Credits
           </h2>
-          <p className="text-xl text-blue-200 max-w-2xl mx-auto">
+          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Use your OPPAL credits to unlock professional logo designs
           </p>
         </div>
@@ -60,14 +60,14 @@ const OfferTiers = () => {
           {tiers.map((tier, index) => (
             <div
               key={index}
-              className={`relative bg-white/10 backdrop-blur-sm border border-white/20 rounded-2xl p-8 hover:shadow-xl transition-all duration-300 ${
+              className={`relative bg-white border border-gray-200 rounded-2xl p-8 shadow-md hover:shadow-lg transition-all duration-300 ${
                 tier.popular ? 'shadow-xl transform scale-105' : ''
               }`}
             >
               {/* Popular Badge */}
               {tier.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-purple-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
+                  <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold">
                     MOST POPULAR
                   </div>
                 </div>
@@ -75,31 +75,33 @@ const OfferTiers = () => {
 
               {/* Header */}
               <div className="text-center mb-6">
-                <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <span className="text-white font-bold text-xl">{tier.title[0]}</span>
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <span className="text-blue-600 font-bold text-xl">{tier.title[0]}</span>
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-2">{tier.title}</h3>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">{tier.title}</h3>
                 
                 {/* Credits */}
                 <div className="mb-2">
-                  <span className="text-3xl font-bold text-white">{tier.credits}</span>
+                  <span className="text-3xl font-bold text-gray-900">{tier.credits}</span>
                 </div>
                 
-                <p className="text-blue-200 text-sm">{tier.description}</p>
+                <p className="text-gray-600 text-sm">{tier.description}</p>
               </div>
 
               {/* Features */}
               <ul className="space-y-3 mb-6">
                 {tier.features.map((feature, featureIndex) => (
                   <li key={featureIndex} className="flex items-center text-sm">
-                    <div className="w-4 h-4 bg-green-400 rounded-full mr-3 flex-shrink-0"></div>
-                    <span className="text-blue-100">{feature}</span>
+                    <div className="w-4 h-4 bg-green-100 rounded-full mr-3 flex-shrink-0 flex items-center justify-center">
+                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    </div>
+                    <span className="text-gray-600">{feature}</span>
                   </li>
                 ))}
               </ul>
 
               {/* CTA */}
-              <button className="w-full bg-purple-600 hover:bg-purple-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
+              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
                 Use Credits
               </button>
             </div>
