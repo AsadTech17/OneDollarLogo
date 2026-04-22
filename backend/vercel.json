@@ -1,16 +1,9 @@
 {
   "version": 2,
-  "routes": [
+  "rewrites": [
     {
-      "src": "/(.*)",
-      "dest": "server.js"
+      "source": "/(.*)",
+      "destination": "server.js"
     }
-  ],
-  "functions": {
-    "server.js": {
-      "runtime": "@vercel/node",
-      "memory": 1024,
-      "maxDuration": 60
-    }
-  }
+  ]
 }
