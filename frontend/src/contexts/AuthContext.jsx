@@ -18,22 +18,14 @@ const createUserInFirestore = async (user) => {
     
     console.log('Sending user data to backend:', userData);
     
-    const response = await fetch(`${API_BASE_URL}/api/users/create`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${idToken}`
-      },
-      body: JSON.stringify(userData)
-    });
+    const response = await api.post('/api/users/create', userData);
     
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      console.error('Backend response error:', response.status, errorData);
-      throw new Error(`Failed to create user: ${response.status} - ${errorData.message || 'Unknown error'}`);
+    if (!response.data.success) {
+      console.error('Backend response error:', response.data.message);
+      throw new Error(`Failed to create user: ${response.data.message || 'Unknown error'}`);
     }
     
-    return await response.json();
+    return response.data;
   } catch (error) {
     console.error('Error creating user in Firestore:', error);
     throw error;

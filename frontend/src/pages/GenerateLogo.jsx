@@ -150,17 +150,10 @@ const GenerateLogo = () => {
 
     try {
       const idToken = await getIdToken();
-      const response = await fetch(`${API_BASE_URL}/api/credits/balance`, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-          "Content-Type": "application/json",
-        },
-      });
+      const response = await api.get('/api/credits/balance');
 
-      const result = await response.json();
-      if (result.success) {
-        setUserCredits(result.data.credits);
+      if (response.data.success) {
+        setUserCredits(response.data.credits);
       }
     } catch (error) {
       console.error("Error fetching user credits:", error);
@@ -173,33 +166,20 @@ const GenerateLogo = () => {
     
     try {
       const idToken = await getIdToken();
-      const response = await fetch(`${API_BASE_URL}/api/credits/unlock-logo`, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${idToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(unlockData),
-      });
+      const response = await api.post('/api/credits/unlock-logo', { generationId: unlockData.generationId });
 
-      const result = await response.json();
-      
-      if (result.success) {
-        // Update credits in navbar with safety check
-        const updatedCredits = ((response.data?.remainingCredits ?? response.data?.credits) || 0);
-        setUserCredits(updatedCredits);
-        
-        // Add to unlocked logos with safety check
+      if (response.data.success) {
+        setUserCredits(response.data.credits || 0);
         if (unlockData.logoId) {
           setUnlockedLogos((prev) => new Set([...prev, unlockData.logoId]));
         }
         
-        const tierName = result.data?.data?.tier || 'Logo';
+        const tierName = response.data.data.tier || 'Logo';
         console.log(`Logo unlocked with ${tierName} tier!`);
         // Close the unlock modal
         setShowUnlockModal(false);
       } else {
-        alert(result.message || "Failed to unlock logo");
+        alert(response.data.message || "Failed to unlock logo");
       }
     } catch (error) {
       console.error("Error unlocking logo:", error);
@@ -219,38 +199,24 @@ const GenerateLogo = () => {
         try {
           const idToken = await getIdToken();
           // Get the latest generation for this user
-          const generationsResponse = await fetch(
-            `${API_BASE_URL}/api/generations/${user.uid}`,
-            {
-              method: "GET",
-              headers: {
-                Authorization: `Bearer ${idToken}`,
-              },
-            },
-          );
+          const generationsResponse = await api.get(`/api/generations/${user.uid}`);
 
-          if (generationsResponse.ok) {
-            const generationsResult = await generationsResponse.json();
-            if (
-              generationsResult.success &&
-              generationsResult.data.length > 0
-            ) {
-              const latestGeneration = generationsResult.data[0];
-              setGeneratedLogos({
-                businessIdea: latestGeneration.businessIdea,
-                brandName: latestGeneration.brandName,
-                niche: latestGeneration.niche,
-                vibe: latestGeneration.vibe,
-                logos: latestGeneration.logos,
-                generatedAt: latestGeneration.createdAt,
-              });
-              setBrandData({
-                brandName: latestGeneration.brandName,
-                niche: latestGeneration.niche,
-                vibe: latestGeneration.vibe,
-              });
-              console.log("Loaded existing generation:", latestGeneration);
-            }
+          if (generationsResponse.data.success && generationsResponse.data.data.length > 0) {
+            const latestGeneration = generationsResponse.data.data[0];
+            setGeneratedLogos({
+              businessIdea: latestGeneration.businessIdea,
+              brandName: latestGeneration.brandName,
+              niche: latestGeneration.niche,
+              vibe: latestGeneration.vibe,
+              logos: latestGeneration.logos,
+              generatedAt: latestGeneration.createdAt,
+            });
+            setBrandData({
+              brandName: latestGeneration.brandName,
+              niche: latestGeneration.niche,
+              vibe: latestGeneration.vibe,
+            });
+            console.log("Loaded existing generation:", latestGeneration);
           }
         } catch (error) {
           console.error("Error loading existing generations:", error);
