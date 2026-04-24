@@ -151,15 +151,15 @@ export const handleWebhook = async (req, res) => {
     });
   }
 
-  // Handle the checkout.session.completed event ONLY
+  // IMMEDIATE RESPONSE AFTER SIGNATURE VERIFICATION
+  res.status(200).json({ received: true });
+  console.log('🚀 Immediate response sent to Stripe, processing in background...');
+
+  // STRICT EVENT CHECK: ONLY process checkout.session.completed
   if (event.type === 'checkout.session.completed') {
     console.log('💰 Payment completed! Processing session...');
     const session = event.data.object;
     console.log('📋 Session data:', JSON.stringify(session, null, 2));
-    
-    // IMMEDIATE RESPONSE TO PREVENT VERCEL RETRIES
-    res.status(200).json({ received: true });
-    console.log('🚀 Immediate response sent to Stripe, processing in background...');
     
     // BACKGROUND PROCESSING - Don't wait for this to complete
     processPaymentAsync(session).catch(error => {
@@ -167,7 +167,6 @@ export const handleWebhook = async (req, res) => {
     });
   } else {
     console.log(`ℹ️ Received unhandled event type: ${event.type}`);
-    res.status(200).json({ received: true });
   }
   
   console.log('🎉 Webhook processed successfully');
@@ -181,12 +180,11 @@ async function processPaymentAsync(session) {
     console.log('📊 Extracted metadata:', { userId, planName, credits });
     console.log(`🎯 Processing successful payment for user ${userId}, plan: ${planName}, credits: ${credits}`);
     
-    // IDEMPOTENCY CHECK: Check if this session has already been processed
+    // FIRESTORE IDEMPOTENCY CHECK: Check if this session has already been processed
     console.log('🔍 Checking if payment has already been processed...');
-    const processedPaymentRef = db.collection('processed_payments').doc(session.id);
-    const processedPaymentDoc = await processedPaymentRef.get();
+    const paymentDoc = await db.collection('processed_payments').doc(session.id).get();
     
-    if (processedPaymentDoc.exists) {
+    if (paymentDoc.exists) {
       console.log('⚠️ Payment already processed, skipping credit addition');
       return { alreadyProcessed: true, sessionId: session.id };
     }
@@ -218,16 +216,9 @@ async function processPaymentAsync(session) {
 
     console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}`);
 
-    // MARK PAYMENT AS PROCESSED (Idempotency)
-    await processedPaymentRef.set({
-      sessionId: session.id,
-      userId: userId,
-      planName: planName,
-      credits: creditsToAdd,
-      amount: session.amount_total / 100,
-      currency: session.currency,
-      processedAt: new Date(),
-      stripeSessionId: session.id
+    // MARK PAYMENT AS PROCESSED AFTER CREDIT UPDATE
+    await db.collection('processed_payments').doc(session.id).set({ 
+      processedAt: new Date() 
     });
     
     console.log('✅ Payment marked as processed in processed_payments collection');
