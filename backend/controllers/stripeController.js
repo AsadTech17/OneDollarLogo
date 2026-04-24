@@ -179,6 +179,14 @@ async function processPaymentAsync(session) {
     
     // STEP 3: Log user ID and plan name from metadata
     console.log(`> [STRIPE WEBHOOK] User: ${userId} | Plan: ${planName} | Credits: ${credits}`);
+    console.log(`> [STRIPE WEBHOOK] RAW METADATA CHECK: ${JSON.stringify(session.metadata)}`);
+    
+    // Verify no hardcoded defaults
+    if (planName !== session.metadata.planName) {
+      console.error(`❌ CRITICAL: planName mismatch! planName=${planName}, metadata.planName=${session.metadata.planName}`);
+    } else {
+      console.log(`✅ Metadata verification passed: planName matches metadata`);
+    }
     
     // FIRESTORE IDEMPOTENCY CHECK: Check if this session has already been processed
     const paymentDoc = await db.collection('processed_payments').doc(session.id).get();
@@ -222,16 +230,21 @@ async function processPaymentAsync(session) {
     console.log(`💳 Current credits: ${currentCredits}, Adding: ${creditsToAdd}`);
     console.log('🔄 Executing Firestore credit increment...');
     
+    // Verify both fields will be set to the same value
+    console.log(`> [STRIPE WEBHOOK] UPDATING USER: lastPurchasePlan='${planName}', lastPurchasePack='${planName}'`);
+    
     await userRef.update({
       credits: admin.firestore.FieldValue.increment(creditsToAdd),
       lastPurchaseAt: new Date(),
       lastPurchasePlan: planName,
+      lastPurchasePack: planName, // Sync both fields with exact same metadata value
       stripeSessionId: session.id
     });
 
     // STEP 5: Log success after Firestore update
     console.log(`> [STRIPE WEBHOOK] SUCCESS | User: ${userId} | Plan: ${planName} | Credits Added: ${creditsToAdd} | Session: ${session.id}`);
     console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}`);
+    console.log(`✅ Both lastPurchasePlan and lastPurchasePack set to: '${planName}'`);
 
     // UPDATE PAYMENT STATUS TO COMPLETED
     console.log('📝 Updating payment status to completed...');
