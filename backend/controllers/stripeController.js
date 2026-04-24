@@ -151,70 +151,104 @@ export const handleWebhook = async (req, res) => {
     });
   }
 
-  // Handle the checkout.session.completed event
+  // Handle the checkout.session.completed event ONLY
   if (event.type === 'checkout.session.completed') {
     console.log('💰 Payment completed! Processing session...');
     const session = event.data.object;
     console.log('📋 Session data:', JSON.stringify(session, null, 2));
     
-    try {
-      const { userId, planName, credits } = session.metadata;
-      
-      console.log('📊 Extracted metadata:', { userId, planName, credits });
-      console.log(`🎯 Processing successful payment for user ${userId}, plan: ${planName}, credits: ${credits}`);
-
-      // Add credits to user's Firestore document
-      console.log('🔍 Looking up user in Firestore...');
-      const userRef = db.collection('users').doc(userId);
-      const userDoc = await userRef.get();
-
-      if (!userDoc.exists) {
-        console.error(`❌ User ${userId} not found in Firestore`);
-        return res.status(404).json({
-          success: false,
-          message: 'User not found'
-        });
-      }
-
-      console.log('✅ User found in Firestore');
-      const currentCredits = userDoc.data().credits || 0;
-      const creditsToAdd = parseInt(credits, 10);
-      
-      console.log(`💳 Current credits: ${currentCredits}, Adding: ${creditsToAdd}`);
-      
-      await userRef.update({
-        credits: admin.firestore.FieldValue.increment(creditsToAdd),
-        lastPurchaseAt: new Date(),
-        lastPurchasePlan: planName,
-        stripeSessionId: session.id
-      });
-
-      console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}`);
-
-      // Optional: Create a purchase record
-      await db.collection('purchases').add({
-        userId: userId,
-        planName: planName,
-        credits: creditsToAdd,
-        amount: session.amount_total / 100, // Convert from cents to dollars
-        currency: session.currency,
-        stripeSessionId: session.id,
-        createdAt: new Date()
-      });
-
-    } catch (error) {
-      console.error('❌ Error processing webhook:', error);
-      console.error('Stack trace:', error.stack);
-      return res.status(500).json({
-        success: false,
-        message: 'Failed to process payment'
-      });
-    }
+    // IMMEDIATE RESPONSE TO PREVENT VERCEL RETRIES
+    res.status(200).json({ received: true });
+    console.log('🚀 Immediate response sent to Stripe, processing in background...');
+    
+    // BACKGROUND PROCESSING - Don't wait for this to complete
+    processPaymentAsync(session).catch(error => {
+      console.error('❌ Background processing failed:', error);
+    });
   } else {
     console.log(`ℹ️ Received unhandled event type: ${event.type}`);
+    res.status(200).json({ received: true });
   }
-
+  
   console.log('🎉 Webhook processed successfully');
-  // Return a 200 response to acknowledge receipt of the event
-  res.json({ received: true });
 };
+
+// Background processing function
+async function processPaymentAsync(session) {
+  try {
+    const { userId, planName, credits } = session.metadata;
+    
+    console.log('📊 Extracted metadata:', { userId, planName, credits });
+    console.log(`🎯 Processing successful payment for user ${userId}, plan: ${planName}, credits: ${credits}`);
+    
+    // IDEMPOTENCY CHECK: Check if this session has already been processed
+    console.log('🔍 Checking if payment has already been processed...');
+    const processedPaymentRef = db.collection('processed_payments').doc(session.id);
+    const processedPaymentDoc = await processedPaymentRef.get();
+    
+    if (processedPaymentDoc.exists) {
+      console.log('⚠️ Payment already processed, skipping credit addition');
+      return { alreadyProcessed: true, sessionId: session.id };
+    }
+    
+    console.log('✅ Payment not yet processed, proceeding with credit addition');
+
+    // Add credits to user's Firestore document
+    console.log('🔍 Looking up user in Firestore...');
+    const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+      console.error(`❌ User ${userId} not found in Firestore`);
+      return { success: false, message: 'User not found' };
+    }
+
+    console.log('✅ User found in Firestore');
+    const currentCredits = userDoc.data().credits || 0;
+    const creditsToAdd = parseInt(credits, 10);
+    
+    console.log(`💳 Current credits: ${currentCredits}, Adding: ${creditsToAdd}`);
+    
+    await userRef.update({
+      credits: admin.firestore.FieldValue.increment(creditsToAdd),
+      lastPurchaseAt: new Date(),
+      lastPurchasePlan: planName,
+      stripeSessionId: session.id
+    });
+
+    console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}`);
+
+    // MARK PAYMENT AS PROCESSED (Idempotency)
+    await processedPaymentRef.set({
+      sessionId: session.id,
+      userId: userId,
+      planName: planName,
+      credits: creditsToAdd,
+      amount: session.amount_total / 100,
+      currency: session.currency,
+      processedAt: new Date(),
+      stripeSessionId: session.id
+    });
+    
+    console.log('✅ Payment marked as processed in processed_payments collection');
+
+    // Optional: Create a purchase record
+    await db.collection('purchases').add({
+      userId: userId,
+      planName: planName,
+      credits: creditsToAdd,
+      amount: session.amount_total / 100, // Convert from cents to dollars
+      currency: session.currency,
+      stripeSessionId: session.id,
+      createdAt: new Date()
+    });
+    
+    console.log('✅ Background processing completed successfully');
+    return { success: true, creditsAdded: creditsToAdd };
+
+  } catch (error) {
+    console.error('❌ Background processing failed:', error);
+    console.error('Stack trace:', error.stack);
+    return { success: false, message: 'Failed to process payment' };
+  }
+}
