@@ -41,32 +41,13 @@ export const getCreditBalance = async (req, res) => {
   }
 };
 
-// 2. Buy credit pack
+// 2. Buy credit pack - DISABLED FOR SECURITY
+// Credits should ONLY be added by Stripe webhook, not frontend requests
 export const buyCreditPack = async (req, res) => {
-  try {
-    const { packId } = req.body;
-    const userId = req.user.uid;
-    const pack = CREDIT_PACKS[packId];
-
-    if (!pack) return res.status(400).json({ message: 'Invalid pack ID' });
-
-    const userRef = db.collection('users').doc(userId);
-    
-    await userRef.set({
-      credits: admin.firestore.FieldValue.increment(pack.credits),
-      lastCreditPurchase: new Date().toISOString(),
-      lastPurchasePack: pack.name
-    }, { merge: true });
-
-    const updatedDoc = await userRef.get();
-    res.json({
-      success: true,
-      message: `${pack.name} added!`,
-      totalCredits: updatedDoc.data().credits
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
+  res.status(403).json({ 
+    success: false, 
+    message: 'Direct credit purchase disabled. Please use Stripe checkout.' 
+  });
 };
 
 // 3. Unlock logo
