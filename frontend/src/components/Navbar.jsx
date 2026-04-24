@@ -232,8 +232,18 @@ const Navbar = () => {
             )}
           </div>
 
-          {/* Mobile menu button */}
-          <div className="md:hidden">
+          {/* Mobile menu button and credits */}
+          <div className="md:hidden flex items-center gap-2">
+            {/* Mobile Credits Display */}
+            {isAuthenticated && (
+              <div className="bg-amber-100 text-amber-700 px-2 py-1 rounded-full text-xs font-bold flex items-center gap-1">
+                🪙 {isCreditsLoading ? (
+                  <span className="inline-block animate-spin rounded-full h-3 w-3 border-2 border-solid border-current border-r-transparent align-middle"></span>
+                ) : (
+                  userCredits
+                )} OPPAL
+              </div>
+            )}
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
@@ -250,24 +260,70 @@ const Navbar = () => {
 
         {/* Mobile menu */}
         {isMenuOpen && (
-          <div className="md:hidden">
-            {user ? (
-              <>
+          <div className="md:hidden bg-white border-t border-gray-200">
+            {/* Credits Display at top of menu */}
+            {isAuthenticated && (
+              <div className="px-4 py-4 bg-gradient-to-r from-amber-50 to-orange-50 border-b border-gray-200">
+                <div className="flex items-center justify-center">
+                  <div className="bg-amber-100 text-amber-700 px-3 py-2 rounded-full text-sm font-bold flex items-center gap-2">
+                    🪙 {isCreditsLoading ? (
+                      <span className="inline-flex items-center">
+                        <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-solid border-current border-r-transparent align-middle mr-2"></span>
+                        Loading...
+                      </span>
+                    ) : (
+                      userCredits
+                    )} OPPAL
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Navigation Links */}
+            <div className="py-2">
+              {navLinks.map((link) => (
+                link.isRoute ? (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100"
+                  >
+                    {link.name}
+                  </Link>
+                ) : (
+                  <span
+                    key={link.name}
+                    onClick={(e) => handleSmoothScroll(e, link.href)}
+                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100"
+                  >
+                    {link.name}
+                  </span>
+                )
+              ))}
+            </div>
+
+            {/* User Actions */}
+            <div className="border-t border-gray-200">
+              {isAuthenticated ? (
                 <button
                   onClick={handleLogout}
-                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors duration-200"
+                  className="block w-full text-left px-4 py-3 text-red-600 hover:bg-red-50 transition-colors duration-200"
                 >
                   Logout
                 </button>
-              </>
-            ) : (
-              <Link 
-                to="/generate"
-                className="block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 w-full text-center"
-              >
-                Start Free
-              </Link>
-            )}
+              ) : (
+                <button
+                  onClick={() => {
+                    setShowLoginModal(true);
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-4 py-3 text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                >
+                  Login
+                </button>
+              )}
+            </div>
           </div>
         )}
       </div>
