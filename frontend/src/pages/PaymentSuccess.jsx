@@ -8,7 +8,7 @@ const PaymentSuccess = () => {
   useEffect(() => {
     // Redirect to home after 3 seconds
     const timer = setTimeout(() => {
-      navigate('/');
+      window.location.href = '/';
     }, 3000);
 
     // Cleanup timer on component unmount
