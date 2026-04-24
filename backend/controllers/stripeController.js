@@ -190,6 +190,18 @@ async function processPaymentAsync(session) {
     }
     
     console.log('✅ Payment not yet processed, proceeding with credit addition');
+    
+    // IMMEDIATELY MARK AS PROCESSING to prevent race condition
+    await db.collection('processed_payments').doc(session.id).set({ 
+      status: 'processing',
+      sessionId: session.id,
+      userId: userId,
+      planName: planName,
+      creditsToAdd: parseInt(credits, 10),
+      startedAt: new Date()
+    });
+    
+    console.log(`> [STRIPE WEBHOOK] Marked as processing | Session: ${session.id}`);
 
     // Add credits to user's Firestore document
     console.log('🔍 Looking up user in Firestore...');
@@ -221,17 +233,15 @@ async function processPaymentAsync(session) {
     console.log(`> [STRIPE WEBHOOK] SUCCESS | User: ${userId} | Plan: ${planName} | Credits Added: ${creditsToAdd} | Session: ${session.id}`);
     console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}`);
 
-    // MARK PAYMENT AS PROCESSED AFTER CREDIT UPDATE
-    console.log('📝 Marking payment as processed...');
-    await db.collection('processed_payments').doc(session.id).set({ 
+    // UPDATE PAYMENT STATUS TO COMPLETED
+    console.log('📝 Updating payment status to completed...');
+    await db.collection('processed_payments').doc(session.id).update({ 
+      status: 'completed',
       processedAt: new Date(),
-      sessionId: session.id,
-      userId: userId,
-      planName: planName,
       creditsAdded: creditsToAdd
     });
     
-    console.log('✅ Payment marked as processed in processed_payments collection');
+    console.log('✅ Payment marked as completed in processed_payments collection');
     console.log('🎯 Credit addition process completed successfully');
 
     // Optional: Create a purchase record
