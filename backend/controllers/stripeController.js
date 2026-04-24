@@ -137,7 +137,9 @@ export const handleWebhook = async (req, res) => {
     console.log('🔐 Verifying webhook signature...');
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
     console.log('✅ Webhook signature verified successfully');
-    console.log('📦 Event type:', event.type);
+    
+    // STEP 1: Log webhook hit with event type
+    console.log(`> [STRIPE WEBHOOK] Webhook received | Event Type: ${event.type}`);
   } catch (err) {
     console.error('❌ Webhook signature verification failed:', err.message);
     return res.status(400).json({ 
@@ -172,16 +174,17 @@ async function processPaymentAsync(session) {
   try {
     const { userId, planName, credits } = session.metadata;
     
-    console.log('📊 Extracted metadata:', { userId, planName, credits });
-    console.log(`🎯 Processing successful payment for user ${userId}, plan: ${planName}, credits: ${credits}`);
+    // STEP 2: Log idempotency check with session ID
+    console.log(`> [STRIPE WEBHOOK] Idempotency check started | Session: ${session.id}`);
+    
+    // STEP 3: Log user ID and plan name from metadata
+    console.log(`> [STRIPE WEBHOOK] User: ${userId} | Plan: ${planName} | Credits: ${credits}`);
     
     // FIRESTORE IDEMPOTENCY CHECK: Check if this session has already been processed
-    console.log('🔍 Checking if payment has already been processed...');
-    console.log('🆔 Session ID:', session.id);
     const paymentDoc = await db.collection('processed_payments').doc(session.id).get();
     
     if (paymentDoc.exists) {
-      console.log('⚠️ Payment already processed, skipping credit addition');
+      console.log(`> [STRIPE WEBHOOK] ALREADY PROCESSED | Session: ${session.id} | Skipping credit addition`);
       console.log('📋 Processed payment data:', paymentDoc.data());
       return { alreadyProcessed: true, sessionId: session.id };
     }
@@ -202,6 +205,8 @@ async function processPaymentAsync(session) {
     const currentCredits = userDoc.data().credits || 0;
     const creditsToAdd = parseInt(credits, 10);
     
+    // STEP 4: Log exact credit amount being added
+    console.log(`> [STRIPE WEBHOOK] Adding ${creditsToAdd} credits to user ${userId} for ${planName}`);
     console.log(`💳 Current credits: ${currentCredits}, Adding: ${creditsToAdd}`);
     console.log('🔄 Executing Firestore credit increment...');
     
@@ -212,6 +217,8 @@ async function processPaymentAsync(session) {
       stripeSessionId: session.id
     });
 
+    // STEP 5: Log success after Firestore update
+    console.log(`> [STRIPE WEBHOOK] SUCCESS | User: ${userId} | Plan: ${planName} | Credits Added: ${creditsToAdd} | Session: ${session.id}`);
     console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}`);
 
     // MARK PAYMENT AS PROCESSED AFTER CREDIT UPDATE
@@ -242,6 +249,8 @@ async function processPaymentAsync(session) {
     return { success: true, creditsAdded: creditsToAdd };
 
   } catch (error) {
+    // STEP 5: Log error if Firestore update fails
+    console.log(`> [STRIPE WEBHOOK] ERROR | User: ${userId || 'unknown'} | Plan: ${planName || 'unknown'} | Error: ${error.message}`);
     console.error('❌ Background processing failed:', error);
     console.error('Stack trace:', error.stack);
     return { success: false, message: 'Failed to process payment' };
