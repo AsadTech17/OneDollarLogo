@@ -19,12 +19,7 @@ const PRICE_MAPPING = {
   pro: {
     amount: 4500, // $45.00
     credits: 150,
-    name: 'Professional Pack'
-  },
-  professional: {
-    amount: 4500, // $45.00
-    credits: 150,
-    name: 'Professional Pack'
+    name: 'Pro Pack'
   },
   enterprise: {
     amount: 7900, // $79.00
@@ -182,10 +177,12 @@ async function processPaymentAsync(session) {
     
     // FIRESTORE IDEMPOTENCY CHECK: Check if this session has already been processed
     console.log('🔍 Checking if payment has already been processed...');
+    console.log('🆔 Session ID:', session.id);
     const paymentDoc = await db.collection('processed_payments').doc(session.id).get();
     
     if (paymentDoc.exists) {
       console.log('⚠️ Payment already processed, skipping credit addition');
+      console.log('📋 Processed payment data:', paymentDoc.data());
       return { alreadyProcessed: true, sessionId: session.id };
     }
     
@@ -206,6 +203,7 @@ async function processPaymentAsync(session) {
     const creditsToAdd = parseInt(credits, 10);
     
     console.log(`💳 Current credits: ${currentCredits}, Adding: ${creditsToAdd}`);
+    console.log('🔄 Executing Firestore credit increment...');
     
     await userRef.update({
       credits: admin.firestore.FieldValue.increment(creditsToAdd),
@@ -217,11 +215,17 @@ async function processPaymentAsync(session) {
     console.log(`✅ Successfully added ${creditsToAdd} credits to user ${userId}`);
 
     // MARK PAYMENT AS PROCESSED AFTER CREDIT UPDATE
+    console.log('📝 Marking payment as processed...');
     await db.collection('processed_payments').doc(session.id).set({ 
-      processedAt: new Date() 
+      processedAt: new Date(),
+      sessionId: session.id,
+      userId: userId,
+      planName: planName,
+      creditsAdded: creditsToAdd
     });
     
     console.log('✅ Payment marked as processed in processed_payments collection');
+    console.log('🎯 Credit addition process completed successfully');
 
     // Optional: Create a purchase record
     await db.collection('purchases').add({

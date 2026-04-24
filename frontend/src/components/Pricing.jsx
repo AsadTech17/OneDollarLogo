@@ -119,7 +119,7 @@ const Pricing = () => {
       color: "border-purple-600",
       badge: null,
       popular: false,
-      packId: "professional",
+      packId: "pro",
     },
     {
       name: "Enterprise Pack",
