@@ -1,6 +1,6 @@
 // @ts-nocheck
 /** @type {import('react').StateSetter<string>} */
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import api from "../api/axios";
 
@@ -23,31 +23,51 @@ const Pricing = () => {
     setShowSuccess(false);
 
     try {
-      const response = await api.post('/api/credits/buy-pack', { packId });
+      // Create Stripe checkout session
+      const response = await api.post('/api/stripe/create-checkout-session', {
+        planName: packId
+      });
 
       if (response.data.success) {
-        setShowSuccess(true);
-        const selectedPack = creditPacks.find(p => p.packId === packId);
-        const packName = selectedPack?.name || 'Credit Pack';
-        setMessage(`${packName} purchased successfully!`);
-
-        // Auto-hide success message after 3 seconds
-        setTimeout(() => {
-          setShowSuccess(false);
-          // Optionally refresh user credits in navbar
-          window.location.reload();
-        }, 3000);
+        // Redirect to Stripe Checkout
+        window.location.href = response.data.url;
       } else {
-        setMessage(result.message || "Failed to purchase credit pack");
+        setMessage(response.data.message || 'Failed to create checkout session');
       }
     } catch (error) {
-      console.error("Error purchasing credit pack:", error);
-      setMessage("Failed to purchase credit pack. Please try again.");
+      console.error('Error creating checkout session:', error);
+      setMessage('Failed to create checkout session. Please try again.');
     } finally {
       setIsLoading(false);
       setProcessingId(null);
     }
   };
+
+  // Check for successful payment from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const sessionId = urlParams.get('session_id');
+    
+    if (success === 'true' && sessionId) {
+      setMessage('Payment successful! Credits have been added to your account.');
+      setShowSuccess(true);
+      
+      // Auto-hide success message after 3 seconds
+      setTimeout(() => {
+        setShowSuccess(false);
+        window.location.reload();
+      }, 3000);
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (success === 'false') {
+      setMessage('Payment was cancelled. Please try again.');
+      
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const creditPacks = [
     {

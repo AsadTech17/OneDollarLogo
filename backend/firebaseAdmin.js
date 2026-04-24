@@ -42,10 +42,11 @@ if (!admin.apps.length) {
   }
 }
 
-// Export Firestore, Auth, and Storage instances
+// Export Firestore, Auth, Storage instances, and admin
 export const db = admin.firestore();
 export const auth = admin.auth();
 export const storage = admin.storage();
+export { admin };
 
 // Get the storage bucket name
 const bucketName = `${process.env.FIREBASE_PROJECT_ID}.appspot.com`;

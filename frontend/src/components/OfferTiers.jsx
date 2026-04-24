@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom';
+
 const OfferTiers = () => {
   const tiers = [
     {
@@ -101,9 +103,13 @@ const OfferTiers = () => {
               </ul>
 
               {/* CTA */}
-              <button className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200">
+              <Link 
+                to="/generate" 
+                state={{ plan: tier.title.toLowerCase() }}
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg transition-colors duration-200 inline-block text-center"
+              >
                 Use Credits
-              </button>
+              </Link>
             </div>
           ))}
         </div>

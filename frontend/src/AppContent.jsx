@@ -8,6 +8,7 @@ import Contact from './components/Contact';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
 import AdminProtectedRoute from './components/AdminProtectedRoute';
+import PaymentSuccess from './pages/PaymentSuccess';
 
 const AppContent = () => {
   const location = useLocation();
@@ -24,6 +25,7 @@ const AppContent = () => {
           <Route path="/generate" element={<GenerateLogo />} />
           <Route path="/generate-old" element={<Generate />} />
           <Route path="/contact" element={<Contact />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin/dashboard" element={<AdminProtectedRoute><AdminDashboard /></AdminProtectedRoute>} />
         </Routes>

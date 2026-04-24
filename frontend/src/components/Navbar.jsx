@@ -10,6 +10,7 @@ const Navbar = () => {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [userCredits, setUserCredits] = useState(0);
+  const [isCreditsLoading, setIsCreditsLoading] = useState(false);
   const dropdownRef = useRef(null);
   const { user, isAuthenticated, getIdToken } = useAuth();
 
@@ -17,6 +18,8 @@ const Navbar = () => {
   useEffect(() => {
     const fetchUserCredits = async () => {
       if (!user) return;
+      
+      setIsCreditsLoading(true);
       
       try {
         const response = await api.get('/api/credits/balance');
@@ -26,11 +29,15 @@ const Navbar = () => {
         }
       } catch (error) {
         console.error('Error fetching user credits:', error);
+      } finally {
+        setIsCreditsLoading(false);
       }
     };
 
     if (user) {
       fetchUserCredits();
+    } else {
+      setIsCreditsLoading(false);
     }
   }, [user, getIdToken]);
 
@@ -187,7 +194,16 @@ const Navbar = () => {
                     {/* Credits Display */}
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="font-semibold text-gray-900 text-sm">
-                        Credits: {userCredits}
+                        Credits: {isCreditsLoading ? (
+                          <span className="inline-flex items-center">
+                            <span className="inline-block animate-spin rounded-full h-3 w-3 border-2 border-solid border-current border-r-transparent align-middle mr-2"></span>
+                            <span className="text-gray-400">Loading...</span>
+                          </span>
+                        ) : (
+                          <span className={userCredits === 0 && !isCreditsLoading ? "text-gray-400" : ""}>
+                            {userCredits}
+                          </span>
+                        )}
                       </p>
                     </div>
 

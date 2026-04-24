@@ -10,12 +10,13 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 dotenv.config({ path: path.join(__dirname, '.env') });
 
-
 import { generateLogo, logoServiceHealth } from './controllers/logoController.js';
 import { checkCredits, deductCredits } from './middleware/checkCredits.js';
 import { createUser, getUserProfile } from './controllers/userController.js';
 import { getUserGenerations as getUserGenerationsHandler } from './controllers/generationsController.js';
 import { buyCreditPack, unlockLogo, getCreditBalance, getCreditPacks, getSpendingTiers } from './controllers/creditsController.js';
+import { createCheckoutSession, handleWebhook } from './controllers/stripeController.js';
+import { authenticateUser } from './middleware/auth.js';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -44,6 +45,13 @@ app.use(cors({
 app.options('*', cors());
 
 app.use(morgan('combined'));
+
+// IMPORTANT: Stripe webhook must be defined BEFORE express.json()
+app.post('/api/stripe/webhook', express.raw({ type: 'application/json' }), (req, res) => {
+  console.log('Stripe webhook route hit!');
+  handleWebhook(req, res);
+});
+
 app.use(express.json());
 
 // Routes
@@ -63,11 +71,16 @@ app.get('/api/users/profile', getUserProfile);
 app.get('/api/generations/:uid', getUserGenerationsHandler);
 
 // Credits Routes
-app.post('/api/credits/buy-pack', checkCredits, buyCreditPack);
-app.post('/api/credits/unlock-logo', checkCredits, unlockLogo);
-app.get('/api/credits/balance', checkCredits, getCreditBalance);
+app.post('/api/credits/buy-pack', authenticateUser, buyCreditPack);
+app.get('/api/credits/balance', authenticateUser, getCreditBalance);
 app.get('/api/credits/packs', getCreditPacks);
 app.get('/api/credits/tiers', getSpendingTiers);
+
+// Stripe Routes
+app.post('/api/stripe/create-checkout-session', authenticateUser, (req, res) => {
+  console.log('Stripe checkout session route hit!');
+  createCheckoutSession(req, res);
+});
 
 // Logo Generation Routes
 app.post('/api/generate-logo', logoGenerationLimiter, checkCredits, generateLogo, deductCredits);

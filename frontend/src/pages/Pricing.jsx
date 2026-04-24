@@ -46,22 +46,46 @@ const Pricing = () => {
     setMessage('');
 
     try {
-      const response = await api.post('/api/credits/buy-pack', { packId });
+      // Create Stripe checkout session
+      const response = await api.post('/api/stripe/create-checkout-session', {
+        planName: packId,
+        userId: user.uid
+      });
 
       if (response.data.success) {
-        setUserCredits(response.data.data?.totalCredits || 0);
-        setMessage(`${response.data.data?.packName || 'Credit Pack'} purchased successfully! You now have ${response.data.data?.totalCredits || 0} credits.`);
-        setSelectedPack(null);
+        // Redirect to Stripe Checkout
+        window.location.href = response.data.url;
       } else {
-        setMessage(response.data.message || 'Failed to purchase credit pack');
+        setMessage(response.data.message || 'Failed to create checkout session');
       }
     } catch (error) {
-      console.error('Error purchasing credit pack:', error);
-      setMessage('Failed to purchase credit pack. Please try again.');
+      console.error('Error creating checkout session:', error);
+      setMessage('Failed to create checkout session. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  // Check for successful payment from URL parameters
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const success = urlParams.get('success');
+    const sessionId = urlParams.get('session_id');
+    
+    if (success === 'true' && sessionId) {
+      setMessage('Payment successful! Credits have been added to your account.');
+      // Refresh user credits
+      if (user) {
+        fetchUserCredits();
+      }
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (success === 'false') {
+      setMessage('Payment was cancelled. Please try again.');
+      // Clean up URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, [user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 to-blue-900">
