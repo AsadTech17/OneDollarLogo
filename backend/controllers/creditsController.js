@@ -3,10 +3,10 @@ const db = admin.firestore();
 
 // Credit pack configurations
 const CREDIT_PACKS = {
-  starter: { name: 'Starter Pack', credits: 25, price: 9.99 },
-  growth: { name: 'Growth Pack', credits: 75, price: 24.99 },
-  professional: { name: 'Professional Pack', credits: 200, price: 49.99 },
-  enterprise: { name: 'Enterprise Pack', credits: 500, price: 99.99 }
+  starter: { name: 'Starter Pack', credits: 25, price: 9.00 },
+  growth: { name: 'Growth Pack', credits: 75, price: 24.00 },
+  pro: { name: 'Pro Pack', credits: 150, price: 45.00 },
+  enterprise: { name: 'Enterprise Pack', credits: 300, price: 79.00 }
 };
 
 // Spending tier configurations

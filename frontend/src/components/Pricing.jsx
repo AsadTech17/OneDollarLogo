@@ -9,7 +9,6 @@ const Pricing = () => {
   const [message, setMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [processingId, setProcessingId] = useState(null);
-  const [showSuccess, setShowSuccess] = useState(false);
 
   const handlePurchasePack = async (packId) => {
     if (!isAuthenticated) {
@@ -20,7 +19,6 @@ const Pricing = () => {
     setProcessingId(packId);
     setIsLoading(true);
     setMessage("");
-    setShowSuccess(false);
 
     try {
       // Create Stripe checkout session
@@ -43,25 +41,12 @@ const Pricing = () => {
     }
   };
 
-  // Check for successful payment from URL parameters
+  // Check for cancelled payment from URL parameters
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const success = urlParams.get('success');
-    const sessionId = urlParams.get('session_id');
+    const canceled = urlParams.get('canceled');
     
-    if (success === 'true' && sessionId) {
-      setMessage('Payment successful! Credits have been added to your account.');
-      setShowSuccess(true);
-      
-      // Auto-hide success message after 3 seconds
-      setTimeout(() => {
-        setShowSuccess(false);
-        window.location.reload();
-      }, 3000);
-      
-      // Clean up URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (success === 'false') {
+    if (canceled === 'true') {
       setMessage('Payment was cancelled. Please try again.');
       
       // Clean up URL
@@ -156,28 +141,6 @@ const Pricing = () => {
           </p>
         </div>
 
-        {/* Success Overlay */}
-        {showSuccess && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-8 max-w-md mx-4 transform transition-all duration-300 scale-100">
-              <div className="flex items-center mb-4">
-                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center">
-                  <svg className="h-16 w-16 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                  </svg>
-                </div>
-                <div>
-                  <h3 className="text-xl font-bold text-green-600 mb-2">
-                    Payment Successful!
-                  </h3>
-                  <p className="text-gray-700">
-                    Credits added to your account
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
 
         {/* Credit Packs Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
@@ -237,7 +200,7 @@ const Pricing = () => {
                       : "border border-blue-600 hover:bg-blue-600 hover:text-white text-blue-600"
                   }`}
                 >
-                  {processingId === pack.id ? (
+                  {processingId === pack.packId ? (
                     <span className="flex items-center justify-center">
                       <span className="inline-block animate-spin rounded-full h-4 w-4 border-2 border-solid border-current border-r-purple-600 border-t-transparent"></span>
                       <span className="ml-2">Processing...</span>
