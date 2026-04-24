@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut, ChevronDown, Image, Clock } from 'lucide-react';
+import { Menu, X, User, LogOut, ChevronDown, Image, Clock, Coins } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import api from "../api/axios";
@@ -247,70 +247,29 @@ const Navbar = () => {
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Mobile menu drawer */}
-      <div
-        className={`md:hidden transition-all duration-300 ease-in-out ${
-          isMenuOpen ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0 overflow-hidden'
-        }`}
-      >
-        <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
-          {navLinks.map((link) => (
-            link.isRoute ? (
-              <Link
-                key={link.name}
-                to={link.href}
-                onClick={() => setIsMenuOpen(false)}
-                className="text-gray-600 hover:text-blue-600 hover:bg-gray-50 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-              >
-                {link.name}
-              </Link>
-            ) : (
-              <a
-                key={link.name}
-                href={link.href}
-                onClick={(e) => handleSmoothScroll(e, link.href)}
-                className="text-gray-600 hover:text-blue-600 hover:bg-gray-50 block px-3 py-2 rounded-md text-base font-medium transition-colors duration-200"
-              >
-                {link.name}
-              </a>
-            )
-          ))}
-          <div className="pt-4 pb-2">
-            {isAuthenticated ? (
+        {/* Mobile menu */}
+        {isMenuOpen && (
+          <div className="md:hidden">
+            {user ? (
               <>
-                {/* User Info */}
-                <div className="flex items-center space-x-3 mb-3 px-3">
-                  <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                    <span className="text-white font-bold text-sm">
-                      {user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
-                    </span>
-                  </div>
-                  <span className="text-gray-700 font-medium">
-                    {user?.displayName || 'User'}
-                  </span>
-                </div>
-                
-                {/* Logout Button */}
                 <button
                   onClick={handleLogout}
-                  className="bg-red-500 hover:bg-red-600 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 flex items-center gap-2 w-full"
+                  className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-blue-600 transition-colors duration-200"
                 >
-                  <LogOut size={16} />
                   Logout
                 </button>
               </>
             ) : (
               <Link 
                 to="/generate"
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 w-full"
+                className="block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 w-full text-center"
               >
                 Start Free
               </Link>
             )}
           </div>
-        </div>
+        )}
       </div>
     </nav>
 
