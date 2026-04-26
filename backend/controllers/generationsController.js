@@ -101,7 +101,197 @@ export const getUserGenerations = async (req, res) => {
   }
 };
 
+// Handler wrapper for server.js import
+export const getUserGenerationsHandler = getUserGenerations;
+
+// Get user's unlocks
+export const getUserUnlocks = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    
+    console.log('🔓 API called: GET /api/unlocks/:userId with userId:', userId);
+    
+    if (!userId) {
+      console.log('❌ Error: User ID is missing');
+      return res.status(200).json({
+        success: true,
+        unlocks: []
+      });
+    }
+
+    console.log('📥 Fetching unlocks for user:', userId);
+
+    // Get all unlocks for this user
+    const unlocksRef = db.collection('users').doc(userId).collection('unlocks');
+    const snapshot = await unlocksRef.get();
+    console.log('📊 Firestore query completed, unlocks found:', snapshot.docs.length);
+    
+    if (snapshot.empty) {
+      console.log('✅ No unlocks found for user:', userId, '- returning empty array');
+      return res.status(200).json({
+        success: true,
+        unlocks: []
+      });
+    }
+
+    console.log('📦 Found unlocks, processing data...');
+    const unlocks = snapshot.docs.map(doc => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        generationId: data.generationId,
+        logoIndex: data.logoIndex,
+        tier: data.tier,
+        cost: data.cost,
+        unlockedAt: data.unlockedAt?.toDate()
+      };
+    });
+
+    console.log('🎯 Returning unlocks:', {
+      count: unlocks.length,
+      generationIds: [...new Set(unlocks.map(u => u.generationId))],
+      logoIndices: unlocks.map(u => u.logoIndex)
+    });
+
+    return res.status(200).json({
+      success: true,
+      unlocks
+    });
+
+  } catch (error) {
+    console.error('💥 CRITICAL ERROR in getUserUnlocks:', {
+      message: error.message,
+      stack: error.stack,
+      code: error.code,
+      details: error.details
+    });
+    
+    // Return empty array instead of 500 error for any Firestore issues
+    console.log('🔄 Returning empty array due to error');
+    return res.status(200).json({
+      success: true,
+      unlocks: []
+    });
+  }
+};
+
+// Handler wrapper for server.js import
+export const getUserUnlocksHandler = getUserUnlocks;
+
 // Generate brand DNA and logos using OpenAI GPT-4o and DALL-E 3
+// Unlock logo endpoint
+export const unlockLogo = async (req, res) => {
+  try {
+    const { generationId, logoIndex, selectedTier } = req.body;
+    const userId = req.user?.uid;
+
+    console.log('🔐 Unlock logo request:', { generationId, logoIndex, selectedTier, userId });
+
+    if (!userId) {
+      return res.status(401).json({
+        success: false,
+        message: 'User not authenticated'
+      });
+    }
+
+    if (!generationId || logoIndex === undefined || !selectedTier) {
+      return res.status(400).json({
+        success: false,
+        message: 'Missing required fields: generationId, logoIndex, selectedTier'
+      });
+    }
+
+    // Define tier costs
+    const tierCosts = {
+      Standard: 10,
+      Premium: 20,
+      Exclusive: 35
+    };
+
+    const cost = tierCosts[selectedTier];
+    if (!cost) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid tier selected'
+      });
+    }
+
+    console.log('💰 Checking user balance for', cost, 'OPPAL');
+
+    // Check user's current OPPAL balance
+    const userDoc = await db.collection('users').doc(userId).get();
+    if (!userDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    const userData = userDoc.data();
+    const currentBalance = userData.credits || 0;
+
+    console.log('📊 Current balance:', currentBalance, 'Required:', cost);
+
+    if (currentBalance < cost) {
+      return res.status(400).json({
+        success: false,
+        message: 'Insufficient OPPAL balance',
+        required: cost,
+        current: currentBalance
+      });
+    }
+
+    // Check if already unlocked to prevent double charging
+    const unlockId = `${generationId}_${logoIndex}`;
+    const existingUnlock = await db.collection('users').doc(userId)
+      .collection('unlocks').doc(unlockId).get();
+
+    if (existingUnlock.exists) {
+      return res.status(400).json({
+        success: false,
+        message: 'Logo already unlocked'
+      });
+    }
+
+    console.log('💳 Deducting', cost, 'OPPAL from user balance');
+
+    // Deduct credits from user balance
+    await db.collection('users').doc(userId).update({
+      credits: admin.firestore.FieldValue.increment(-cost),
+      lastUnlockedAt: admin.firestore.FieldValue.serverTimestamp()
+    });
+
+    // Create unlock record
+    await db.collection('users').doc(userId)
+      .collection('unlocks').doc(unlockId).set({
+        generationId,
+        logoIndex,
+        tier: selectedTier,
+        cost,
+        unlockedAt: admin.firestore.FieldValue.serverTimestamp()
+      });
+
+    console.log('✅ Logo unlocked successfully');
+
+    return res.json({
+      success: true,
+      message: 'Logo unlocked successfully',
+      data: {
+        tier: selectedTier,
+        cost,
+        remainingBalance: currentBalance - cost
+      }
+    });
+
+  } catch (error) {
+    console.error('❌ Error unlocking logo:', error);
+    return res.status(500).json({
+      success: false,
+      message: 'Failed to unlock logo'
+    });
+  }
+};
+
 export const generateBrandStrategy = async (req, res) => {
   try {
     const { businessIdea } = req.body;

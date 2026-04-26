@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Unlock } from "lucide-react";
+import { Unlock, Download } from "lucide-react";
+import { toast } from "react-hot-toast";
 import api from "../api/axios";
 
 const GenerateLogo = () => {
@@ -12,8 +13,52 @@ const GenerateLogo = () => {
   const [error, setError] = useState(null);
   const [isLoadingExisting, setIsLoadingExisting] = useState(true);
   const [downloadingLogo, setDownloadingLogo] = useState(null);
+  const [showUnlockModal, setShowUnlockModal] = useState(false);
+  const [selectedLogo, setSelectedLogo] = useState(null);
+  const [selectedTier, setSelectedTier] = useState('Standard');
+  const [isUnlocking, setIsUnlocking] = useState(false);
+  const [unlockedLogos, setUnlockedLogos] = useState(new Set()); // Tracks generationId_index combinations
+  const [currentGenerationId, setCurrentGenerationId] = useState(null);
+  const [userCredits, setUserCredits] = useState(0);
+  const [isCreditsLoading, setIsCreditsLoading] = useState(false);
   const navigate = useNavigate();
   const { user } = useAuth();
+  
+  // Tier costs
+  const tierCosts = {
+    Standard: 10,
+    Premium: 20,
+    Exclusive: 35
+  };
+  
+  // Fetch user credits (same as Navbar)
+  useEffect(() => {
+    const fetchUserCredits = async () => {
+      if (!user) return;
+      
+      setIsCreditsLoading(true);
+      
+      try {
+        const response = await api.get('/api/credits/balance');
+        
+        if (response.data.success) {
+          setUserCredits(response.data.data?.credits || 0);
+          console.log('💰 Credits fetched:', response.data.data?.credits);
+        }
+      } catch (error) {
+        console.error('Error fetching user credits:', error);
+        setUserCredits(0);
+      } finally {
+        setIsCreditsLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchUserCredits();
+    } else {
+      setIsCreditsLoading(false);
+    }
+  }, [user]);
 
   // Rotating loading messages
   const loadingMessages = [
@@ -37,42 +82,72 @@ const GenerateLogo = () => {
     }
   }, [isLoading]);
 
-  // Check for existing generations on component mount
+  // Check for existing generations and unlocks on component mount
   useEffect(() => {
     const loadExistingGenerations = async () => {
       if (user) {
         console.log('🔍 Frontend: Loading existing generations for user:', user.uid);
-        setIsLoadingExisting(true);
+        setIsLoadingExisting(true); // Set loading state to true
+        
+        // Clear unlocked logos before loading new results
+        setUnlockedLogos(new Set());
+        setCurrentGenerationId(null);
         
         try {
           const response = await api.get(`/api/generations/${user.uid}`);
           console.log('📥 Frontend: API response received:', response.data);
           
+          // Check for success, data, and if there are actual logos
           if (response.data.success && response.data.data && response.data.data.logos && response.data.data.logos.length > 0) {
             console.log('✅ Frontend: Setting logos from existing generation:', response.data.data);
             setGeneratedLogos(response.data.data);
             setBusinessIdea(response.data.data.businessIdea || '');
+            setCurrentGenerationId(response.data.data.generationId);
+            
+            // Load existing unlocks for this user
+            if (user.uid && response.data.data.generationId) {
+              try {
+                const unlocksResponse = await api.get(`/api/unlocks/${user.uid}`);
+                if (unlocksResponse.data.success && unlocksResponse.data.unlocks) {
+                  // Filter unlocks for current generation only and create generationId_index combinations
+                  const currentGenerationUnlocks = unlocksResponse.data.unlocks.filter(
+                    u => u.generationId === response.data.data.generationId
+                  );
+                  const unlockedCombinations = new Set(
+                    currentGenerationUnlocks.map(u => `${u.generationId}_${u.logoIndex}`)
+                  );
+                  setUnlockedLogos(unlockedCombinations);
+                  console.log('🔓 Loaded existing unlocks for current generation:', unlockedCombinations);
+                }
+              } catch (unlockError) {
+                console.log('📝 No existing unlocks found or error loading unlocks');
+              }
+            }
           } else {
             // No existing generations, set empty state
             console.log('📝 Frontend: No existing generations found, setting empty state');
             setGeneratedLogos(null);
             setBusinessIdea('');
+            setCurrentGenerationId(null);
           }
         } catch (error) {
           console.error('💥 Frontend: Error loading existing generations:', error);
           // Don't show error to user, just set empty state
           setGeneratedLogos(null);
           setBusinessIdea('');
+          setCurrentGenerationId(null);
         } finally {
-          setIsLoadingExisting(false);
+          setIsLoadingExisting(false); // Always set loading state to false
         }
       } else {
-        setIsLoadingExisting(false);
+        setIsLoadingExisting(false); // If no user, stop loading existing
+        setUnlockedLogos(new Set());
+        setCurrentGenerationId(null);
       }
     };
 
     loadExistingGenerations();
-  }, [user]);
+  }, [user]); // Rerun when user object changes
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -105,8 +180,31 @@ const GenerateLogo = () => {
       });
 
       if (response.data.success) {
+        // Reset unlocked logos for new generation
+        setUnlockedLogos(new Set());
+        setCurrentGenerationId(response.data.data.generationId);
         setGeneratedLogos(response.data.data);
         console.log('Generation completed with ID:', response.data.data.generationId);
+        
+        // Fetch unlocks for this new generation (in case there are any)
+        if (user && response.data.data.generationId) {
+          try {
+            const unlocksResponse = await api.get(`/api/unlocks/${user.uid}`);
+            if (unlocksResponse.data.success && unlocksResponse.data.unlocks) {
+              // Filter unlocks for this new generation only
+              const currentGenerationUnlocks = unlocksResponse.data.unlocks.filter(
+                u => u.generationId === response.data.data.generationId
+              );
+              const unlockedCombinations = new Set(
+                currentGenerationUnlocks.map(u => `${u.generationId}_${u.logoIndex}`)
+              );
+              setUnlockedLogos(unlockedCombinations);
+              console.log('🔓 Loaded unlocks for new generation:', unlockedCombinations);
+            }
+          } catch (unlockError) {
+            console.log('📝 No unlocks found for new generation');
+          }
+        }
       } else {
         setError(response.data.message || 'Failed to generate logos');
       }
@@ -126,6 +224,83 @@ const GenerateLogo = () => {
     setGeneratedLogos(null);
     setBusinessIdea("");
     setError(null);
+  };
+
+
+  const handleUnlockClick = (logo, index) => {
+    setSelectedLogo({ ...logo, index });
+    setSelectedTier('Standard');
+    setShowUnlockModal(true);
+    
+    console.log('🔄 Unlock modal opened with balance:', userCredits);
+  };
+
+  const handleUnlock = async () => {
+    if (!selectedLogo || !generatedLogos) return;
+
+    // Final credit validation before API call
+    if (userCredits < tierCosts[selectedTier]) {
+      toast.error('Insufficient credits. Please top up your OPPAL balance.');
+      return;
+    }
+
+    try {
+      setIsUnlocking(true);
+      
+      console.log('🔐 Unlocking logo:', selectedLogo.index, 'Tier:', selectedTier);
+      
+      const response = await api.post('/api/unlock-logo', {
+        generationId: generatedLogos.generationId,
+        logoIndex: selectedLogo.index,
+        selectedTier
+      });
+
+      if (response.data.success) {
+        console.log('✅ Logo unlocked successfully');
+        
+        // Add to unlocked logos set with generation-specific combination
+        const newUnlocked = new Set(unlockedLogos);
+        const unlockKey = `${generatedLogos.generationId}_${selectedLogo.index}`;
+        newUnlocked.add(unlockKey);
+        setUnlockedLogos(newUnlocked);
+        console.log('🔓 Added unlock combination:', unlockKey);
+        
+        // Close modal
+        setShowUnlockModal(false);
+        
+        // Trigger download after successful unlock
+        handleDownload(selectedLogo.imageUrl, selectedLogo.style, selectedLogo.index);
+        
+        // Show success toast
+        toast.success(`Success! ${response.data.data.cost} OPPAL deducted. Your clean logo is ready for download.`);
+        
+        // Refresh credits after successful unlock
+        try {
+          const refreshResponse = await api.get('/api/credits/balance');
+          if (refreshResponse.data.success) {
+            setUserCredits(refreshResponse.data.data?.credits || 0);
+            console.log('💰 Credits refreshed after unlock:', refreshResponse.data.data?.credits);
+          }
+        } catch (error) {
+          console.error('Error refreshing credits:', error);
+        }
+      } else {
+        console.error('❌ Unlock failed:', response.data.message);
+        
+        if (response.data.message.includes('Insufficient')) {
+          toast.error('Insufficient credits. Please top up your OPPAL balance.');
+          // Could redirect to pricing page here
+          // navigate('/pricing');
+        } else {
+          toast.error(response.data.message || 'Failed to unlock logo');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error unlocking logo:', error);
+      toast.error('Failed to unlock logo. Please try again.');
+    } finally {
+      setIsUnlocking(false);
+    }
   };
 
   const handleDownload = async (imageUrl, logoStyle, index) => {
@@ -387,49 +562,51 @@ const GenerateLogo = () => {
                         }}
                       />
                       
-                      {/* Watermark Overlay - Balanced Grid Pattern */}
-                      <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                        <div 
-                          className="absolute inset-0 flex items-center justify-center"
-                          style={{
-                            backgroundImage: `repeating-linear-gradient(
-                              45deg,
-                              transparent,
-                              transparent 80px,
-                              rgba(0, 0, 0, 0.2) 80px,
-                              rgba(0, 0, 0, 0.2) 100px
-                            ), repeating-linear-gradient(
-                              -45deg,
-                              transparent,
-                              transparent 80px,
-                              rgba(0, 0, 0, 0.2) 80px,
-                              rgba(0, 0, 0, 0.2) 100px
-                            )`,
-                            backgroundSize: '250px 250px',
-                            mixBlendMode: 'difference',
-                            opacity: 0.7
-                          }}
-                        >
-                          <div className="relative w-full h-full">
-                            {/* Repeated watermark text grid with balanced spacing */}
-                            <div className="absolute inset-0 grid grid-cols-2 gap-16 p-6" style={{ transform: 'rotate(-45deg) scale(1.6)' }}>
-                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
-                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
-                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
-                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
-                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
-                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
-                            </div>
-                            
-                            {/* Additional pattern for full coverage */}
-                            <div className="absolute inset-0 flex items-center justify-center">
-                              <div className="text-3xl font-normal text-gray-700 opacity-25 rotate-[-45deg] select-none whitespace-nowrap mix-blend-mode-overlay">
-                                1DollarLogo.com
+                      {/* Watermark Overlay - Only show if not unlocked for this generation */}
+                      {!unlockedLogos.has(`${generatedLogos.generationId}_${index}`) && (
+                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                          <div 
+                            className="absolute inset-0 flex items-center justify-center"
+                            style={{
+                              backgroundImage: `repeating-linear-gradient(
+                                45deg,
+                                transparent,
+                                transparent 80px,
+                                rgba(0, 0, 0, 0.2) 80px,
+                                rgba(0, 0, 0, 0.2) 100px
+                              ), repeating-linear-gradient(
+                                -45deg,
+                                transparent,
+                                transparent 80px,
+                                rgba(0, 0, 0, 0.2) 80px,
+                                rgba(0, 0, 0, 0.2) 100px
+                              )`,
+                              backgroundSize: '250px 250px',
+                              mixBlendMode: 'difference',
+                              opacity: 0.7
+                            }}
+                          >
+                            <div className="relative w-full h-full">
+                              {/* Repeated watermark text grid with balanced spacing */}
+                              <div className="absolute inset-0 grid grid-cols-2 gap-16 p-6" style={{ transform: 'rotate(-45deg) scale(1.6)' }}>
+                                <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                                <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                                <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                                <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                                <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                                <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                              </div>
+                              
+                              {/* Additional pattern for full coverage */}
+                              <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="text-3xl font-normal text-gray-700 opacity-25 rotate-[-45deg] select-none whitespace-nowrap mix-blend-mode-overlay">
+                                  1DollarLogo.com
+                                </div>
                               </div>
                             </div>
                           </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                     <div className="p-4">
                       <h3 className="text-gray-900 font-bold mb-2">{logo.style}</h3>
@@ -441,17 +618,20 @@ const GenerateLogo = () => {
                           <span className="text-xs text-gray-500">
                             {logo.style.toLowerCase()}
                           </span>
-                          <button
-                            onClick={() => window.open(logo.imageUrl, '_blank')}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
-                          >
-                            View Full Size
-                          </button>
                         </div>
                         
-                        {/* Unlock Logo Button */}
+                        {/* Unlock/Download Button */}
                         <button
-                          onClick={() => handleDownload(logo.imageUrl, logo.style, index)}
+                          onClick={() => {
+                            const unlockKey = `${generatedLogos.generationId}_${index}`;
+                            if (unlockedLogos.has(unlockKey)) {
+                              // Direct download if already unlocked
+                              handleDownload(logo.imageUrl, logo.style, index);
+                            } else {
+                              // Open unlock modal if not unlocked
+                              handleUnlockClick(logo, index);
+                            }
+                          }}
                           disabled={downloadingLogo === index}
                           className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center disabled:cursor-not-allowed"
                         >
@@ -461,7 +641,12 @@ const GenerateLogo = () => {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              Unlocking...
+                              Downloading...
+                            </>
+                          ) : unlockedLogos.has(`${generatedLogos.generationId}_${index}`) ? (
+                            <>
+                              <Download className="w-4 h-4 mr-2" />
+                              Download Clean Version
                             </>
                           ) : (
                             <>
@@ -479,6 +664,144 @@ const GenerateLogo = () => {
           )}
         </div>
       </div>
+
+      {/* Unlock Modal */}
+      {showUnlockModal && selectedLogo && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Unlock Logo</h2>
+            
+            <div className="mb-6">
+              <div className="text-sm text-gray-600 mb-2">
+                <strong>Logo:</strong> {selectedLogo.style}
+              </div>
+              <div className="text-sm text-gray-600">
+                <strong>Current Balance:</strong> 
+                <span className="font-mono">
+                  {isCreditsLoading ? (
+                    <span className="inline-flex items-center">
+                      <span className="inline-block animate-spin rounded-full h-3 w-3 border-2 border-solid border-current border-r-transparent align-middle mr-2"></span>
+                      <span className="text-gray-400">Loading...</span>
+                    </span>
+                  ) : (
+                    userCredits
+                  )}
+                </span> OPPAL
+              </div>
+            </div>
+
+            <div className="space-y-3 mb-6">
+              <div 
+                className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                  selectedTier === 'Standard' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedTier('Standard')}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-semibold text-gray-900">Standard</div>
+                    <div className="text-sm text-gray-600">Web-ready PNG/JPG</div>
+                  </div>
+                  <div className="text-lg font-bold text-blue-600">10 OPPAL</div>
+                </div>
+              </div>
+
+              <div 
+                className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                  selectedTier === 'Premium' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedTier('Premium')}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-semibold text-gray-900">Premium</div>
+                    <div className="text-sm text-gray-600">High-res + Transparency</div>
+                  </div>
+                  <div className="text-lg font-bold text-blue-600">20 OPPAL</div>
+                </div>
+              </div>
+
+              <div 
+                className={`border rounded-lg p-3 cursor-pointer transition-all ${
+                  selectedTier === 'Exclusive' 
+                    ? 'border-blue-500 bg-blue-50' 
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+                onClick={() => setSelectedTier('Exclusive')}
+              >
+                <div className="flex justify-between items-center">
+                  <div>
+                    <div className="font-semibold text-gray-900">Exclusive</div>
+                    <div className="text-sm text-gray-600">Vector (SVG) conversion</div>
+                  </div>
+                  <div className="text-lg font-bold text-blue-600">35 OPPAL</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="text-sm text-gray-600 mb-4">
+              <strong>Remaining Balance:</strong> 
+              <span className={`font-mono ${
+                !isCreditsLoading && userCredits < tierCosts[selectedTier] ? 'text-red-600 font-semibold' : ''
+              }`}>
+                {isCreditsLoading ? '---' : 
+                 userCredits < tierCosts[selectedTier] ? 'N/A' : 
+                 userCredits - tierCosts[selectedTier]}
+              </span> OPPAL
+              
+              {/* Get More OPPAL link when insufficient credits */}
+              {!isCreditsLoading && userCredits < tierCosts[selectedTier] && (
+                <div className="mt-2">
+                  <button
+                    onClick={() => window.location.href = '/#pricing-section'}
+                    className="text-blue-600 hover:text-blue-700 text-sm font-medium underline"
+                  >
+                    Get More OPPAL →
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <div className="flex space-x-3">
+              <button
+                onClick={() => setShowUnlockModal(false)}
+                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleUnlock}
+                disabled={isUnlocking || isCreditsLoading || userCredits < tierCosts[selectedTier]}
+                className={`flex-1 font-semibold py-3 px-4 rounded-lg transition-all duration-200 flex items-center justify-center ${
+                  isUnlocking || isCreditsLoading || userCredits < tierCosts[selectedTier]
+                    ? 'bg-gray-400 text-gray-200 cursor-not-allowed opacity-50'
+                    : 'bg-blue-600 hover:bg-blue-700 text-white'
+                }`}
+              >
+                {isUnlocking ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Unlocking...
+                  </>
+                ) : isCreditsLoading ? (
+                  'Checking Balance...'
+                ) : userCredits < tierCosts[selectedTier] ? (
+                  'Insufficient OPPAL'
+                ) : (
+                  'Unlock Logo'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
