@@ -77,14 +77,27 @@ const GenerateLogo = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!businessIdea.trim() || businessIdea.trim().length < 10) {
-      setError("Please provide at least 10 characters for your business idea.");
+    // Check if user is authenticated
+    if (!user) {
+      // Redirect to login page for non-authenticated users
+      navigate('/login');
       return;
     }
-
+    
+    // Validate input
+    if (!businessIdea.trim()) {
+      setError('Please describe your business idea');
+      return;
+    }
+    
+    if (businessIdea.trim().length < 10) {
+      setError('Please provide at least 10 characters for your business idea');
+      return;
+    }
+    
     setIsLoading(true);
     setError(null);
-    setGeneratedLogos(null);
+    setLoadingMessage(loadingMessages[0]);
 
     try {
       const response = await api.post('/api/generate', {
@@ -269,10 +282,10 @@ const GenerateLogo = () => {
 
                 <button
                   type="submit"
-                  disabled={isLoading}
+                  disabled={isLoading || !user}
                   className="w-full bg-blue-600 hover:bg-blue-700 focus:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 focus:scale-105 disabled:transform-none focus:outline-none focus:ring-4 focus:ring-blue-300"
                 >
-                  {isLoading ? "Generating..." : "Generate Logos"}
+                  {isLoading ? "Generating..." : (!user ? "Login to Generate" : "Generate Logos")}
                 </button>
               </form>
             </div>
