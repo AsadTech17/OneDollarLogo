@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Download } from "lucide-react";
+import { Unlock } from "lucide-react";
 import api from "../api/axios";
 
 const GenerateLogo = () => {
@@ -363,7 +363,7 @@ const GenerateLogo = () => {
                     key={index}
                     className="bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100 hover:border-blue-200 transition-all duration-300"
                   >
-                    <div className="relative aspect-square bg-gray-50">
+                    <div className="relative aspect-square bg-gray-50 overflow-hidden">
                       <img
                         src={logo.imageUrl}
                         alt={`${logo.style} logo concept`}
@@ -373,6 +373,50 @@ const GenerateLogo = () => {
                           e.target.src = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAyNCIgaGVpZ2h0PSIxMDI0IiB2aWV3Qm94PSIwIDAgMTAyNCAxMDI0IiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPjxyZWN0IHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIGZpbGw9IiNGM0Y0RjYiLz48dGV4dCB4PSI1MTIiIHk9IjUxMiIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZG9taW5hbnQtYmFzZWxpbmU9Im1pZGRsZSIgZmlsbD0iIzY2NjY2NiIgZm9udC1zaXplPSIyNCI+SW1hZ2UgTG9hZGluZzwvdGV4dD48L3N2Zz4=';
                         }}
                       />
+                      
+                      {/* Watermark Overlay - Balanced Grid Pattern */}
+                      <div className="absolute inset-0 pointer-events-none overflow-hidden">
+                        <div 
+                          className="absolute inset-0 flex items-center justify-center"
+                          style={{
+                            backgroundImage: `repeating-linear-gradient(
+                              45deg,
+                              transparent,
+                              transparent 80px,
+                              rgba(0, 0, 0, 0.2) 80px,
+                              rgba(0, 0, 0, 0.2) 100px
+                            ), repeating-linear-gradient(
+                              -45deg,
+                              transparent,
+                              transparent 80px,
+                              rgba(0, 0, 0, 0.2) 80px,
+                              rgba(0, 0, 0, 0.2) 100px
+                            )`,
+                            backgroundSize: '250px 250px',
+                            mixBlendMode: 'difference',
+                            opacity: 0.7
+                          }}
+                        >
+                          <div className="relative w-full h-full">
+                            {/* Repeated watermark text grid with balanced spacing */}
+                            <div className="absolute inset-0 grid grid-cols-2 gap-16 p-6" style={{ transform: 'rotate(-45deg) scale(1.6)' }}>
+                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                              <div className="text-xl font-light text-white opacity-30 select-none whitespace-nowrap">1DollarLogo.com</div>
+                            </div>
+                            
+                            {/* Additional pattern for full coverage */}
+                            <div className="absolute inset-0 flex items-center justify-center">
+                              <div className="text-3xl font-normal text-gray-700 opacity-25 rotate-[-45deg] select-none whitespace-nowrap mix-blend-mode-overlay">
+                                1DollarLogo.com
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
                     </div>
                     <div className="p-4">
                       <h3 className="text-gray-900 font-bold mb-2">{logo.style}</h3>
@@ -392,7 +436,7 @@ const GenerateLogo = () => {
                           </button>
                         </div>
                         
-                        {/* Download Button */}
+                        {/* Unlock Logo Button */}
                         <button
                           onClick={() => handleDownload(logo.imageUrl, logo.style, index)}
                           disabled={downloadingLogo === index}
@@ -404,12 +448,12 @@ const GenerateLogo = () => {
                                 <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                               </svg>
-                              Downloading...
+                              Unlocking...
                             </>
                           ) : (
                             <>
-                              <Download className="w-4 h-4 mr-2" />
-                              Download
+                              <Unlock className="w-4 h-4 mr-2" />
+                              Unlock Logo
                             </>
                           )}
                         </button>
