@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
 import api from "../api/axios";
 
 const GenerateLogo = () => {
@@ -8,7 +9,9 @@ const GenerateLogo = () => {
   const [loadingMessage, setLoadingMessage] = useState("");
   const [generatedLogos, setGeneratedLogos] = useState(null);
   const [error, setError] = useState(null);
+  const [isLoadingExisting, setIsLoadingExisting] = useState(true);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   // Rotating loading messages
   const loadingMessages = [
@@ -32,6 +35,43 @@ const GenerateLogo = () => {
     }
   }, [isLoading]);
 
+  // Check for existing generations on component mount
+  useEffect(() => {
+    const loadExistingGenerations = async () => {
+      if (user) {
+        console.log('🔍 Frontend: Loading existing generations for user:', user.uid);
+        setIsLoadingExisting(true);
+        
+        try {
+          const response = await api.get(`/api/generations/${user.uid}`);
+          console.log('📥 Frontend: API response received:', response.data);
+          
+          if (response.data.success && response.data.data && response.data.data.logos && response.data.data.logos.length > 0) {
+            console.log('✅ Frontend: Setting logos from existing generation:', response.data.data);
+            setGeneratedLogos(response.data.data);
+            setBusinessIdea(response.data.data.businessIdea || '');
+          } else {
+            // No existing generations, set empty state
+            console.log('📝 Frontend: No existing generations found, setting empty state');
+            setGeneratedLogos(null);
+            setBusinessIdea('');
+          }
+        } catch (error) {
+          console.error('💥 Frontend: Error loading existing generations:', error);
+          // Don't show error to user, just set empty state
+          setGeneratedLogos(null);
+          setBusinessIdea('');
+        } finally {
+          setIsLoadingExisting(false);
+        }
+      } else {
+        setIsLoadingExisting(false);
+      }
+    };
+
+    loadExistingGenerations();
+  }, [user]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -51,6 +91,7 @@ const GenerateLogo = () => {
 
       if (response.data.success) {
         setGeneratedLogos(response.data.data);
+        console.log('Generation completed with ID:', response.data.data.generationId);
       } else {
         setError(response.data.message || 'Failed to generate logos');
       }
@@ -95,8 +136,47 @@ const GenerateLogo = () => {
             </p>
           </div>
 
+          {/* Loading Existing Generations */}
+          {isLoadingExisting && (
+            <div className="max-w-4xl mx-auto">
+              <div className="bg-white rounded-2xl shadow-xl p-12 border border-gray-100">
+                <div className="text-center">
+                  <div className="mb-8">
+                    <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full">
+                      <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center">
+                        <span className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-blue-700">
+                          🔄
+                        </span>
+                      </div>
+                    </div>
+                    <div className="mt-4 flex justify-center space-x-2">
+                      <div
+                        className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "0ms" }}
+                      ></div>
+                      <div
+                        className="w-3 h-3 bg-blue-500 rounded-full animate-bounce"
+                        style={{ animationDelay: "150ms" }}
+                      ></div>
+                      <div
+                        className="w-3 h-3 bg-blue-400 rounded-full animate-bounce"
+                        style={{ animationDelay: "300ms" }}
+                      ></div>
+                    </div>
+                  </div>
+                  <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                    Loading your designs...
+                  </h2>
+                  <p className="text-gray-600">
+                    Checking for existing logo concepts
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Input Form */}
-          {!isLoading && !generatedLogos && (
+          {!isLoading && !isLoadingExisting && !generatedLogos && (
             <div className="max-w-3xl mx-auto">
               <form
                 onSubmit={handleSubmit}

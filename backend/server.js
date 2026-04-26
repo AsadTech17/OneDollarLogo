@@ -69,7 +69,7 @@ app.get('/api/users/profile', getUserProfile);
 
 // Generations Routes
 app.get('/api/generations/:uid', getUserGenerationsHandler);
-app.post('/api/generate', generateBrandStrategy);
+app.post('/api/generate', authenticateUser, generateBrandStrategy);
 
 // Credits Routes
 app.post('/api/credits/buy-pack', authenticateUser, buyCreditPack);
