@@ -1,5 +1,6 @@
 import OpenAI from 'openai';
 import { db, admin } from '../firebaseAdmin.js';
+import { v2 as cloudinary } from 'cloudinary';
 
 // Get user's generations
 export const getUserGenerations = async (req, res) => {
@@ -200,20 +201,63 @@ Important:
 
     // Wait for all images to be generated
     const generatedImages = await Promise.all(imagePromises);
+    
+    // Upload images to Cloudinary for permanent storage
+    console.log('☁️ Starting Cloudinary upload for', generatedImages.length, 'images');
+    const cloudinaryUrls = await Promise.all(generatedImages.map(async (img, index) => {
+      try {
+        console.log(`📤 Uploading image ${index + 1} to Cloudinary...`);
+        
+        // Generate a unique public ID
+        const brandName = brandDNA.brandName?.replace(/[^a-zA-Z0-9]/g, '_') || 'logo';
+        const timestamp = Date.now();
+        const publicId = `1dollarlogo_${userId}_${brandName}_${img.style.toLowerCase()}_${timestamp}`;
+        
+        // Upload to Cloudinary
+        const result = await cloudinary.uploader.upload(img.imageUrl, {
+          public_id: publicId,
+          folder: '1dollarlogo/logos',
+          resource_type: 'image',
+          format: 'png',
+          quality: 'auto:good',
+          fetch_format: 'auto',
+          secure: true
+        });
+        
+        console.log(`✅ Image ${index + 1} uploaded to Cloudinary:`, result.secure_url);
+        return {
+          ...img,
+          cloudinaryUrl: result.secure_url,
+          publicId: result.public_id
+        };
+      } catch (uploadError) {
+        console.error(`❌ Failed to upload image ${index + 1} to Cloudinary:`, uploadError);
+        // Fallback to original OpenAI URL if Cloudinary fails
+        return {
+          ...img,
+          cloudinaryUrl: img.imageUrl,
+          publicId: null
+        };
+      }
+    }));
+    
+    console.log('🎯 All images processed, Cloudinary URLs:', cloudinaryUrls.map(img => img.cloudinaryUrl));
 
-    // Prepare the response
+    // Prepare the response using Cloudinary URLs
     const result = {
       brandName: brandDNA.brandName,
       vibe: brandDNA.vibe,
       colorPalette: brandDNA.colorPalette,
       businessIdea: businessIdea,
-      logos: generatedImages.map((img, index) => ({
+      logos: cloudinaryUrls.map((img, index) => ({
         id: index,
         style: img.style,
-        imageUrl: img.imageUrl,
+        imageUrl: img.cloudinaryUrl, // Use Cloudinary URL instead of OpenAI URL
+        originalUrl: img.imageUrl, // Keep original for reference
         prompt: img.prompt,
         revisedPrompt: img.revisedPrompt,
-        description: `${img.style} design for ${brandDNA.brandName}`
+        description: `${img.style} design for ${brandDNA.brandName}`,
+        publicId: img.publicId
       }))
     };
 
@@ -230,12 +274,14 @@ Important:
       console.log('🖼️ Generated images count:', generatedImages.length);
       console.log('🔗 Image URLs:', generatedImages.map(img => img.imageUrl));
 
-      // Create generation document in user's generations subcollection
+      // Create generation document in user's generations sub-collection
       const generationData = {
         userId: userId,
         businessIdea: businessIdea,
         brandDNA: brandDNA,
-        logoUrls: generatedImages.map(img => img.imageUrl),
+        logoUrls: cloudinaryUrls.map(img => img.cloudinaryUrl), // Save Cloudinary URLs
+        originalUrls: cloudinaryUrls.map(img => img.imageUrl), // Keep OpenAI URLs for reference
+        publicIds: cloudinaryUrls.map(img => img.publicId),
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       };
 

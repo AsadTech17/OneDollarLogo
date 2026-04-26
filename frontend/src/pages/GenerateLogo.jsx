@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { Download } from "lucide-react";
 import api from "../api/axios";
 
 const GenerateLogo = () => {
@@ -10,6 +11,7 @@ const GenerateLogo = () => {
   const [generatedLogos, setGeneratedLogos] = useState(null);
   const [error, setError] = useState(null);
   const [isLoadingExisting, setIsLoadingExisting] = useState(true);
+  const [downloadingLogo, setDownloadingLogo] = useState(null);
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -111,6 +113,60 @@ const GenerateLogo = () => {
     setGeneratedLogos(null);
     setBusinessIdea("");
     setError(null);
+  };
+
+  const handleDownload = async (imageUrl, logoStyle, index) => {
+    try {
+      setDownloadingLogo(index);
+      
+      console.log('🔄 Starting download for:', logoStyle, imageUrl);
+      
+      // Fetch the image as a blob
+      const response = await fetch(imageUrl);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Convert response to blob
+      const blob = await response.blob();
+      console.log('📦 Blob created, size:', blob.size, 'type:', blob.type);
+      
+      // Create object URL from blob
+      const objectUrl = URL.createObjectURL(blob);
+      
+      // Generate clean filename
+      const brandName = generatedLogos?.brandName || businessIdea.trim().split(' ')[0] || 'logo';
+      const cleanBrandName = brandName.replace(/[^a-zA-Z0-9]/g, '_');
+      const cleanLogoStyle = logoStyle.replace(/[^a-zA-Z0-9]/g, '_');
+      const filename = `1DollarLogo-${cleanBrandName}-${cleanLogoStyle}.png`;
+      
+      // Create hidden anchor element
+      const link = document.createElement('a');
+      link.href = objectUrl;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // Add to DOM, trigger click, and clean up
+      document.body.appendChild(link);
+      link.click();
+      
+      // Clean up after download
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(objectUrl);
+      }, 100);
+      
+      console.log('✅ Logo downloaded successfully as:', filename);
+    } catch (error) {
+      console.error('❌ Error downloading logo:', error);
+      
+      // Fallback: open in new tab if download fails
+      window.open(imageUrl, '_blank');
+      alert('Download failed. Image opened in new tab. Right-click and save as.');
+    } finally {
+      setDownloadingLogo(null);
+    }
   };
 
   return (
@@ -323,15 +379,39 @@ const GenerateLogo = () => {
                       <p className="text-gray-700 text-sm mb-3">
                         {logo.description}
                       </p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-xs text-gray-500">
-                          {logo.style.toLowerCase()}
-                        </span>
+                      <div className="flex flex-col space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-xs text-gray-500">
+                            {logo.style.toLowerCase()}
+                          </span>
+                          <button
+                            onClick={() => window.open(logo.imageUrl, '_blank')}
+                            className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                          >
+                            View Full Size
+                          </button>
+                        </div>
+                        
+                        {/* Download Button */}
                         <button
-                          onClick={() => window.open(logo.imageUrl, '_blank')}
-                          className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                          onClick={() => handleDownload(logo.imageUrl, logo.style, index)}
+                          disabled={downloadingLogo === index}
+                          className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-blue-400 text-white font-medium py-2 px-4 rounded-lg transition-all duration-200 flex items-center justify-center disabled:cursor-not-allowed"
                         >
-                          View Full Size
+                          {downloadingLogo === index ? (
+                            <>
+                              <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                              Downloading...
+                            </>
+                          ) : (
+                            <>
+                              <Download className="w-4 h-4 mr-2" />
+                              Download
+                            </>
+                          )}
                         </button>
                       </div>
                     </div>
