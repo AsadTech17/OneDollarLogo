@@ -13,7 +13,7 @@ dotenv.config({ path: path.join(__dirname, '.env') });
 import { generateLogo, logoServiceHealth } from './controllers/logoController.js';
 import { checkCredits, deductCredits } from './middleware/checkCredits.js';
 import { createUser, getUserProfile } from './controllers/userController.js';
-import { getUserGenerations as getUserGenerationsHandler } from './controllers/generationsController.js';
+import { getUserGenerations as getUserGenerationsHandler, generateBrandStrategy } from './controllers/generationsController.js';
 import { buyCreditPack, unlockLogo, getCreditBalance, getCreditPacks, getSpendingTiers } from './controllers/creditsController.js';
 import { createCheckoutSession, handleWebhook } from './controllers/stripeController.js';
 import { authenticateUser } from './middleware/auth.js';
@@ -69,6 +69,7 @@ app.get('/api/users/profile', getUserProfile);
 
 // Generations Routes
 app.get('/api/generations/:uid', getUserGenerationsHandler);
+app.post('/api/generate', generateBrandStrategy);
 
 // Credits Routes
 app.post('/api/credits/buy-pack', authenticateUser, buyCreditPack);
