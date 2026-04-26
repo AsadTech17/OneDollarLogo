@@ -3,7 +3,6 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import Home from './pages/Home';
 import GenerateLogo from './pages/GenerateLogo';
-import Generate from './pages/Generate';
 import Contact from './components/Contact';
 import AdminLogin from './pages/AdminLogin';
 import AdminDashboard from './pages/AdminDashboard';
@@ -23,7 +22,6 @@ const AppContent = () => {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/generate" element={<GenerateLogo />} />
-          <Route path="/generate-old" element={<Generate />} />
           <Route path="/contact" element={<Contact />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/admin/login" element={<AdminLogin />} />

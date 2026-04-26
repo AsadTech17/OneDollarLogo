@@ -255,40 +255,25 @@ const GenerateLogo = () => {
       return;
     }
 
-    setIsLoading(true);
-    setGeneratedLogos(null);
+    // Show "Coming Soon" toast notification instead of calling API
+    const toast = document.createElement("div");
+    toast.className =
+      "fixed top-4 right-4 bg-blue-500 text-white px-6 py-3 rounded-lg shadow-lg z-50 max-w-sm";
+    toast.innerHTML = `
+      <div class="flex items-center">
+        <span class="mr-2">🚀</span>
+        <span>Coming Soon! We are fine-tuning our AI engine to provide the best logos for you.</span>
+      </div>
+    `;
 
-    try {
-      // Get Firebase ID token for authentication
-      const idToken = await getIdToken();
+    document.body.appendChild(toast);
 
-      const response = await api.post('/api/generate-logo', { businessIdea: businessIdea.trim() });
-
-      const result = response.data;
-
-      if (result.success) {
-        setGeneratedLogos(result.data);
-
-        // Extract brand data from response - prioritize top level data with businessIdea fallback
-        const words = businessIdea.trim().split(" ");
-        const fallbackName = words.slice(0, 2).join(" ");
-
-        const brandInfo = {
-          brandName: result.data.brandName || fallbackName || "Business",
-          niche: result.data.niche || "General Business",
-          vibe: result.data.vibe || "Professional",
-        };
-        setBrandData(brandInfo);
-      } else {
-        setError(result.message || "Failed to generate logos");
+    // Remove toast after 5 seconds
+    setTimeout(() => {
+      if (document.body.contains(toast)) {
+        document.body.removeChild(toast);
       }
-    } catch (err) {
-      setError(
-        "Failed to connect to the logo generation service. Please try again.",
-      );
-    } finally {
-      setIsLoading(false);
-    }
+    }, 5000);
   };
 
   const handleRegenerate = () => {
