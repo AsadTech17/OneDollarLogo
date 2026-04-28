@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Star } from "lucide-react";
+import { Star, ArrowRight, Zap, Target, Shield } from "lucide-react";
 
 const Hero = () => {
   const navigate = useNavigate();
@@ -13,60 +13,88 @@ const Hero = () => {
     <>
       <section
         id="home"
-        className="bg-gradient-to-br from-gray-50 to-gray-100 py-20"
+        className="relative min-h-[750px] bg-white overflow-hidden -mt-[120px]"
       >
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            {/* Cat Logo */}
-            <div className="mb-8 flex justify-center">
-              <img
-                src="/1DollarlogoCat.png"
-                alt="1 Dollar Logo Cat"
-                className="h-32 w-auto object-contain"
-              />
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <img
+            src="/1DollarLogo - Block 1 (Hero Banner) Home Page.png"
+            alt="1 Dollar Logo Hero Banner"
+            className="w-full h-full object-contain object-right"
+          />
+        </div>
+
+        {/* Content Overlay */}
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-full">
+          <div className="min-h-[750px] flex flex-col justify-between py-12">
+            {/* Main Content - Left Side */}
+            <div className="max-w-2xl pl-10 pt-16">
+              {/* Main Headline */}
+              <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold text-[#0a1d37] mb-6 leading-none">
+                FROM IDEA TO IDENTITY.{" "}
+                <span className="text-red-600">IN MINUTES.</span>
+              </h1>
+
+              {/* Sub-heading */}
+              <p className="text-md text-gray-900 mb-8 leading-relaxed max-w-md">
+                AI-powered brand creation built to generate logos, identity assets, and launch-ready visuals without templates.
+              </p>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col sm:flex-row gap-4">
+                {/* Start Creating Button */}
+                <button
+                  onClick={handleGenerateClick}
+                  className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-8 rounded-full flex items-center space-x-2 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                >
+                  <span>Start Creating</span>
+                  <ArrowRight size={16} className="text-white" />
+                </button>
+
+                {/* View Examples Button */}
+                <button
+                  className="bg-white hover:bg-gray-50 text-blue-900 font-bold py-3 px-6 rounded-full border-2 border-blue-900 transition-all duration-200 transform hover:scale-105"
+                >
+                  View Examples
+                </button>
+              </div>
             </div>
 
-            {/* Main Headline */}
-            <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
-              AI Logo Generator
-              <span className="block w-24 h-[4px] bg-blue-600 mt-2 mx-auto rounded-full"></span>
-            </h1>
+            {/* Bottom Features Bar */}
+            <div className="bg-gray-900 py-6 px-10 rounded-2xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                {/* Feature 1 */}
+                <div className="flex items-center space-x-2 border-r border-gray-700 pr-4 last:border-r-0">
+                  <Star className="text-yellow-400 fill-current" size={16} />
+                  <span className="text-white text-sm font-medium">
+                    4.7 Image Quality Score
+                  </span>
+                </div>
 
-            {/* Description Text */}
-            <p className="text-lg text-gray-500 mb-8 max-w-3xl mx-auto">
-              First AI logo creator without templates - powered by OpenAI, trained for unique, original design.
-            </p>
+                {/* Feature 2 */}
+                <div className="flex items-center space-x-2 border-r border-gray-700 pr-4 last:border-r-0">
+                  <Zap className="text-red-500" size={16} />
+                  <span className="text-white text-sm font-medium">
+                    Instant Generation
+                  </span>
+                </div>
 
-            {/* Generate Button */}
-            <button
-              onClick={handleGenerateClick}
-              className="inline-block bg-blue-600 hover:bg-blue-700 focus:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition-all duration-200 transform hover:scale-105 focus:scale-105 shadow-lg focus:shadow-xl focus:outline-none focus:ring-4 focus:ring-blue-300"
-            >
-              Generate
-            </button>
+                {/* Feature 3 */}
+                <div className="flex items-center space-x-2 border-r border-gray-700 pr-4 last:border-r-0">
+                  <Target className="text-red-500" size={16} />
+                  <span className="text-white text-sm font-medium">
+                    Brand-Trained AI
+                  </span>
+                </div>
 
-            {/* Rating Section */}
-            <div className="mt-12 flex items-center justify-center space-x-2">
-              {/* 5 Yellow Stars */}
-              <div className="flex space-x-1">
-                {[...Array(5)].map((_, i) => (
-                  <Star
-                    key={i}
-                    size={20}
-                    className="text-yellow-400 fill-current"
-                  />
-                ))}
+                {/* Feature 4 */}
+                <div className="flex items-center space-x-2">
+                  <Shield className="text-red-500" size={16} />
+                  <span className="text-white text-sm font-medium">
+                    Commercial-Ready Output
+                  </span>
+                </div>
               </div>
-              
-              {/* Rating Text */}
-              <span className="text-gray-600 font-medium ml-2">
-                4.7
-              </span>
-              
-              {/* Quality Score */}
-              <span className="text-gray-500 text-sm ml-1">
-                Image quality score
-              </span>
             </div>
           </div>
         </div>

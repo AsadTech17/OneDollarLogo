@@ -100,7 +100,7 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full bg-white shadow-md">
+      <nav className="sticky top-0 z-50 w-full bg-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
@@ -123,7 +123,7 @@ const Navbar = () => {
                   <Link
                     key={link.name}
                     to={link.href}
-                    className="font-bold text-blue-900 hover:text-blue-700 transition-colors duration-200 relative group"
+                    className="font-semibold text-[#0a1d37] hover:text-blue-700 transition-colors duration-200 relative group"
                   >
                     {link.name}
                     <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
@@ -133,7 +133,7 @@ const Navbar = () => {
                     <span
                       key={link.name}
                       onClick={(e) => handleSmoothScroll(e, link.href)}
-                      className="font-bold text-blue-900 hover:text-blue-700 transition-colors duration-200 relative group cursor-pointer"
+                      className="font-semibold text-[#0a1d37] hover:text-blue-700 transition-colors duration-200 relative group cursor-pointer"
                     >
                       {link.name}
                       <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
@@ -143,7 +143,7 @@ const Navbar = () => {
                       key={link.name}
                       href={link.href}
                       onClick={(e) => handleSmoothScroll(e, link.href)}
-                      className="font-bold text-blue-900 hover:text-blue-700 transition-colors duration-200 relative group"
+                      className="font-semibold text-[#0a1d37] hover:text-blue-700 transition-colors duration-200 relative group"
                     >
                       {link.name}
                       <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
