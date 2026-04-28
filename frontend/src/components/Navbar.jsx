@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, User, LogOut, ChevronDown, Image, Clock, Coins } from 'lucide-react';
+import { Menu, X, User, LogOut, ChevronDown, Image, Clock, Coins, ArrowRight } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import LoginModal from './LoginModal';
 import api from "../api/axios";
@@ -100,45 +100,53 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-gray-100 shadow-sm">
+      <nav className="sticky top-0 z-50 w-full bg-white shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo */}
           <div className="flex-shrink-0">
-            <Link to="/" className="text-2xl font-bold text-gray-900 hover:text-blue-600 transition-colors duration-200">
-              1DollarLogo
+            <Link to="/" className="flex items-center">
+              <img 
+                src="/1DollarLogo - Icon (Logo Trans) .png" 
+                alt="1DollarLogo" 
+                className="h-10 w-auto object-contain"
+                style={{ height: '150px' }}
+              />
             </Link>
           </div>
 
-          {/* Desktop Navigation */}
-          <div className="hidden md:block">
-            <div className="ml-10 flex items-baseline space-x-8">
+          {/* Desktop Navigation - Centered */}
+          <div className="hidden md:flex flex-1 justify-center">
+            <div className="flex items-center space-x-8">
               {navLinks.map((link) => (
                 link.isRoute ? (
                   <Link
                     key={link.name}
                     to={link.href}
-                    className="text-gray-600 hover:text-blue-600 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2"
+                    className="font-bold text-blue-900 hover:text-blue-700 transition-colors duration-200 relative group"
                   >
                     {link.name}
+                    <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
                   </Link>
                 ) : (
                   link.isPricingLink ? (
                     <span
                       key={link.name}
                       onClick={(e) => handleSmoothScroll(e, link.href)}
-                      className="text-gray-600 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 cursor-pointer"
+                      className="font-bold text-blue-900 hover:text-blue-700 transition-colors duration-200 relative group cursor-pointer"
                     >
                       {link.name}
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
                     </span>
                   ) : (
                     <a
                       key={link.name}
                       href={link.href}
                       onClick={(e) => handleSmoothScroll(e, link.href)}
-                      className="text-gray-600 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200"
+                      className="font-bold text-blue-900 hover:text-blue-700 transition-colors duration-200 relative group"
                     >
                       {link.name}
+                      <span className="absolute bottom-0 left-0 w-full h-0.5 bg-red-500 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-200"></span>
                     </a>
                   )
                 )
@@ -146,8 +154,18 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* User Profile / CTA Button - Desktop */}
-          <div className="hidden md:block">
+          {/* Action Buttons */}
+          <div className="hidden md:flex items-center space-x-4">
+            {/* Start Creating Button */}
+            <Link
+              to="/generate"
+              className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-full flex items-center space-x-2 transition-colors duration-200"
+            >
+              Start Creating
+              <ArrowRight size={16} />
+            </Link>
+
+            {/* User Profile */}
             {isAuthenticated ? (
               <div className="relative" ref={dropdownRef}>
                 {/* User Profile Button */}
@@ -156,23 +174,16 @@ const Navbar = () => {
                   className="flex items-center space-x-3 text-gray-700 hover:text-gray-900 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2"
                 >
                   {/* Initial-based Avatar */}
-                  <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-sm">
+                  <div className="w-10 h-10 bg-blue-900 rounded-full flex items-center justify-center shadow-sm">
                     <span className="text-white font-bold text-lg">
                       {user?.displayName?.charAt(0)?.toUpperCase() || 'U'}
                     </span>
                   </div>
                   
-                  {/* User Name */}
-                  <div className="text-left">
-                    <p className="font-medium text-gray-900">
-                      {user?.displayName || 'User'}
-                    </p>
-                  </div>
-                  
                   {/* Chevron Down Icon */}
                   <ChevronDown 
                     size={16} 
-                    className={`text-gray-500 transition-transform duration-200 ${
+                    className={`text-gray-700 transition-transform duration-200 ${
                       isDropdownOpen ? 'rotate-180' : ''
                     }`}
                   />
@@ -180,7 +191,7 @@ const Navbar = () => {
 
                 {/* Dropdown Menu */}
                 {isDropdownOpen && (
-                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-xl border border-gray-100 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-blue-100 py-2 z-50">
                     {/* User Info Header */}
                     <div className="px-4 py-3 border-b border-gray-100">
                       <p className="font-semibold text-gray-900 text-sm">
@@ -225,7 +236,7 @@ const Navbar = () => {
             ) : (
               <button
                 onClick={() => setShowLoginModal(true)}
-                className="bg-blue-600 hover:bg-blue-700 focus:bg-blue-800 text-white font-semibold py-2 px-6 rounded-lg transition-colors duration-200 transform hover:scale-105 focus:scale-105 inline-block focus:outline-none focus:ring-2 focus:ring-blue-300"
+                className="bg-blue-900 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded-full flex items-center space-x-2 transition-colors duration-200"
               >
                 Login
               </button>
@@ -279,6 +290,18 @@ const Navbar = () => {
               </div>
             )}
 
+            {/* Start Creating Button - Mobile */}
+            <div className="px-4 py-3">
+              <Link
+                to="/generate"
+                onClick={() => setIsMenuOpen(false)}
+                className="w-full bg-red-600 hover:bg-red-700 text-white font-semibold py-3 px-4 rounded-full flex items-center justify-center space-x-2 transition-colors duration-200"
+              >
+                Start Creating
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+
             {/* Navigation Links */}
             <div className="py-2">
               {navLinks.map((link) => (
@@ -287,15 +310,18 @@ const Navbar = () => {
                     key={link.name}
                     to={link.href}
                     onClick={() => setIsMenuOpen(false)}
-                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100"
+                    className="block px-4 py-3 font-bold text-blue-900 hover:text-blue-700 hover:bg-gray-50 transition-colors duration-200 border-b border-gray-100"
                   >
                     {link.name}
                   </Link>
                 ) : (
                   <span
                     key={link.name}
-                    onClick={(e) => handleSmoothScroll(e, link.href)}
-                    className="block px-4 py-3 text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100"
+                    onClick={(e) => {
+                      handleSmoothScroll(e, link.href);
+                      setIsMenuOpen(false);
+                    }}
+                    className="block px-4 py-3 font-bold text-blue-900 hover:text-blue-700 hover:bg-gray-50 transition-colors duration-200 cursor-pointer border-b border-gray-100"
                   >
                     {link.name}
                   </span>
