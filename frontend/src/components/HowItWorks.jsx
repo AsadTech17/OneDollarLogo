@@ -1,72 +1,107 @@
-import React from 'react';
+import React from 'react'
+import { useNavigate } from 'react-router-dom'
+import './HowItWorks.css'
 
 const HowItWorks = () => {
-  const steps = [
-    {
-      id: 1,
-      title: "Purchase Credits",
-      description: "Start by choosing a credit pack that fits your needs. 1DollarLogo uses the OPPAL economy, allowing you to unlock high-quality brand assets instantly.",
-      image: "/buyimg.jpeg",
-    },
-    {
-      id: 2,
-      title: "Describe Your Vision",
-      description: "Enter a single-field description of your business idea. Our AI 'Brain' interprets your niche and industry trends to create a unique Brand DNA.",
-      image: "/Promptimg.jpeg",
-    },
-    {
-      id: 3,
-      title: "Generate & Export",
-      description: "Our engine generates 4 unique logo variations. Select your favorite and export it instantly in professional formats like PNG, JPG, or high-res SVG.",
-      image: "/EditorImg.jpeg",
-    }
-  ];
+  const navigate = useNavigate();
 
+  const handleGenerateClick = () => {
+    navigate("/generate");
+  };
   return (
-    <section id="how-it-works" className="py-20 bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="how-it-works" className="py-8 bg-gray-50">
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Main Heading */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-bold text-gray-900 mb-4">How It Works</h2>
-          <div className="w-24 h-1 bg-blue-600 mx-auto rounded-full"></div>
+        <div className="text-center mb-5">
+          <h2 className="text-3xl md:text-4xl font-bold text-[#0a1d37] mb-2 leading-none">
+            Build Your <span className="relative inline-block">Brand in</span> <span className="text-red-600">3 Steps</span>
+          </h2>
         </div>
 
-        {/* 3-Column Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {steps.map((step) => (
-            <div 
-              key={step.id} 
-              className="bg-white rounded-2xl shadow-md p-8 flex flex-col items-center text-center transition-transform duration-300 hover:-translate-y-2 border border-gray-100"
-            >
-              {/* Image Header */}
-              <div className="mb-6 w-full flex justify-center">
-                <img 
-                  src={step.image} 
-                  alt={step.title} 
-                  className="h-32 object-contain rounded-xl"
-                />
-              </div>
-
-              {/* Badge and Title */}
-              <div className="flex items-center justify-center gap-3 mb-4">
-                <span className="flex items-center justify-center w-8 h-8 bg-blue-600 text-white rounded-full font-bold text-sm">
-                  {step.id}
-                </span>
-                <h3 className="text-xl font-bold text-gray-800">
-                  {step.title}
-                </h3>
-              </div>
-
-              {/* Description */}
-              <p className="text-gray-600 leading-relaxed text-sm">
-                {step.description}
-              </p>
+        {/* 3-Column Grid with Arrows */}
+        <div className="flex flex-col md:flex-row items-stretch justify-center gap-3">
+          {/* Step 1 - FUND */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center flex flex-col items-center w-full max-w-[320px]">
+            
+            {/* Icon */}
+            <div className="mb-0 -mt-8">
+              <img
+                src="/1DollarLogo - Block 3 (Icon 1) Home Page.png"
+                alt="FUND"
+                className="w-[170px] h-[170px] object-contain mx-auto"
+              />
             </div>
-          ))}
+            
+            {/* Title */}
+            <h3 className="text-xl font-bold text-[#0a1d37] mb-1 -mt-3">FUND</h3>
+            
+            {/* Description */}
+            <p className="text-gray-600 leading-relaxed flex-grow">
+              Buy OPPAL credits and choose the level of output you need.
+            </p>
+          </div>
+
+          {/* Arrow 1 */}
+          <div className="hidden md:flex items-center justify-center">
+            <span className="text-3xl text-gray-400">→</span>
+          </div>
+
+          {/* Step 2 - CREATE */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center flex flex-col items-center w-full max-w-[320px]">
+            
+            {/* Icon */}
+            <div className="mb-0 -mt-8">
+              <img
+                src="/1DollarLogo - Block 3 (Icon 2) Home Page.png"
+                alt="CREATE"
+                className="w-[170px] h-[170px] object-contain mx-auto"
+              />
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-xl font-bold text-[#0a1d37] mb-1 -mt-3">CREATE</h3>
+            
+            {/* Description */}
+            <p className="text-gray-600 leading-relaxed flex-grow">
+              Describe your idea. Our AI interprets your business and generates brand-ready logo directions.
+            </p>
+          </div>
+
+          {/* Arrow 2 */}
+          <div className="hidden md:flex items-center justify-center">
+            <span className="text-3xl text-gray-400">→</span>
+          </div>
+
+          {/* Step 3 - EXPORT */}
+          <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center flex flex-col items-center w-full max-w-[320px]">            
+            {/* Icon */}
+            <div className="mb-0 -mt-8">
+              <img
+                src="/1DollarLogo - Block 3 (Icon 3) Home Page.png"
+                alt="EXPORT"
+                className="w-[170px] h-[170px] object-contain mx-auto"
+              />
+            </div>
+            
+            {/* Title */}
+            <h3 className="text-xl font-bold text-[#0a1d37] mb-1 -mt-3">EXPORT</h3>
+            
+            {/* Description */}
+            <p className="text-gray-600 leading-relaxed flex-grow">
+              Pick your favorite, customize it, and download professional assets.
+            </p>
+          </div>
+        </div>
+
+        {/* Call to Action Button */}
+        <div className="text-center mt-2 mb-0">
+          <button onClick={handleGenerateClick} className="bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-8 rounded-full transition-all duration-200 transform hover:scale-105 shadow-lg">
+            Start With 10 OPPAL →
+          </button>
         </div>
       </div>
     </section>
-  );
-};
+  )
+}
 
-export default HowItWorks;
+export default HowItWorks
