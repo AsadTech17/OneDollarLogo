@@ -2,6 +2,7 @@
 /** @type {import('react').StateSetter<string>} */
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { CheckCircle2 } from "lucide-react";
 import api from "../api/axios";
 
 const Pricing = () => {
@@ -59,7 +60,7 @@ const Pricing = () => {
       name: "Starter Pack",
       price: "$9",
       credits: "25 OPPAL",
-      description: "Perfect for getting started",
+      description: "Best for testing ideas.",
       features: [
         "25 OPPAL credits",
         "2 Standard logos (10 OPPAL each)",
@@ -76,7 +77,7 @@ const Pricing = () => {
       name: "Growth Pack",
       price: "$24",
       credits: "75 OPPAL",
-      description: "Best value for growing businesses",
+      description: "Best for founders launching real brands.",
       features: [
         "75 OPPAL credits",
         "3 Premium logos (20 OPPAL each)",
@@ -85,7 +86,7 @@ const Pricing = () => {
         "Priority support",
       ],
       color: "border-purple-600",
-      badge: "POPULAR",
+      badge: "MOST CHOSEN",
       popular: true,
       packId: "growth",
     },
@@ -93,10 +94,10 @@ const Pricing = () => {
       name: "Pro Pack",
       price: "$45",
       credits: "150 OPPAL",
-      description: "For professionals and agencies",
+      description: "Best for professionals and creators.",
       features: [
         "150 OPPAL credits",
-        "4 Exclusive logos (35 OPPAL each)",
+        "6 Exclusive logos (35 OPPAL each)",
         "10 credits remaining for upgrades",
         "Valid for 12 months",
         "Priority support",
@@ -110,7 +111,7 @@ const Pricing = () => {
       name: "Enterprise Pack",
       price: "$79",
       credits: "300 OPPAL",
-      description: "Maximum flexibility for teams",
+      description: "Best for teams and agencies.",
       features: [
         "300 OPPAL credits",
         "8 Exclusive logos (35 OPPAL each)",
@@ -128,64 +129,73 @@ const Pricing = () => {
   return (
     <section
       id="pricing"
-      className="py-20 bg-gray-50"
+      className="py-2 bg-gray-50"
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <div className="text-center mb-16">
+        <div className="text-center mb-10">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Simple, Transparent Pricing
           </h2>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Purchase credits to unlock professional logo designs
+          <p className="text-sm text-gray-600 max-w-4xl mx-auto whitespace-nowrap">
+            Buy OPPAL credits once. Use them to create, refine, and export your brand assets.
           </p>
         </div>
-
 
         {/* Credit Packs Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
           {creditPacks.map((pack, index) => (
             <div
               key={index}
-              className={`relative bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 ${
-                pack.popular ? "border-blue-600 shadow-lg transform scale-105" : ""
+              className={`relative bg-white border border-gray-200 rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 h-full flex flex-col ${
+                pack.popular ? "border-red-600 shadow-lg transform scale-105" : ""
               }`}
             >
               {/* Popular Badge */}
               {pack.badge && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-                  <div className="bg-blue-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center">
+                  <div className="bg-red-600 text-white px-4 py-1 rounded-full text-sm font-semibold flex items-center whitespace-nowrap">
                     <span className="text-sm font-semibold">{pack.badge}</span>
                   </div>
                 </div>
               )}
-              <div className="p-6">
+              <div className="p-4 flex-1 flex flex-col">
                 {/* Pack Header */}
-                <div className="text-center mb-6">
+                <div className="text-center mb-4">
                   <h3 className="text-xl font-bold text-gray-900 mb-2">
                     {pack.name}
                   </h3>
                   <div className="mb-3">
                     <span className="text-3xl font-bold text-gray-900">
-                      {pack.price}
+                      {pack.price === "$24" ? (
+                        <span className="text-red-600">{pack.price}</span>
+                      ) : (
+                        <span className="text-[#0a1d37]">{pack.price}</span>
+                      )}
                     </span>
                   </div>
-                  <div className="bg-gray-100 rounded-lg px-3 py-1 mb-2">
-                    <span className="text-gray-700 font-semibold">
+                  <div className={`bg-gray-100 rounded-lg px-3 py-1 mb-2 text-green-700 font-semibold`}>
                       {pack.credits}
-                    </span>
-                  </div>
-                  <p className="text-gray-600 text-sm">{pack.description}</p>
+                    </div>
+                  <p className="text-gray-600 text-[12px]">{pack.description}</p>
                 </div>
 
                 {/* Features List */}
-                <ul className="space-y-3 mb-6">
+                <ul className="space-y-2 mb-4 flex-1">
                   {pack.features.map((feature, featureIndex) => (
                     <li key={featureIndex} className="flex items-start">
-                      <div className="w-4 h-4 bg-green-100 rounded-full mr-3 mt-0.5 flex-shrink-0 flex items-center justify-center">
-                        <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                      <div className="flex-shrink-0 w-4 h-4 rounded-full bg-[#16a34a] flex items-center justify-center mr-3 mt-1">
+                        <svg 
+                          className="w-2.5 h-2.5 text-white" 
+                          fill="none" 
+                          viewBox="0 0 24 24" 
+                          stroke="currentColor" 
+                          strokeWidth="4"
+                        >
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
                       </div>
-                      <span className="text-gray-600 text-sm">{feature}</span>
+                       <span className="text-gray-600 text-[13px]">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -196,8 +206,8 @@ const Pricing = () => {
                   disabled={processingId === pack.packId || isLoading}
                   className={`w-full py-3 px-4 rounded-lg font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-blue-300 ${
                     pack.popular
-                      ? "bg-blue-600 hover:bg-blue-700 focus:bg-blue-800 text-white"
-                      : "border border-blue-600 hover:bg-blue-600 hover:text-white text-blue-600"
+                      ? "bg-red-600 hover:bg-red-700 focus:bg-red-800 text-white"
+                      : "border border-[#1e3a8a] text-gray-900 hover:bg-[#1e3a8a] hover:bg-opacity-10"
                   }`}
                 >
                   {processingId === pack.packId ? (
@@ -212,41 +222,6 @@ const Pricing = () => {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Legal Disclaimer */}
-        <div className="text-center mb-8">
-          <p className="text-gray-400 text-[11px] max-w-3xl mx-auto">
-            OPPAL credits are non-cash digital credits and are non-refundable
-            once consumed. Credits are valid for use across the Leviathan
-            platform ecosystem.
-          </p>
-        </div>
-
-        {/* Credits Info */}
-        <div className="bg-white rounded-2xl p-8 text-center shadow-md border border-gray-200">
-          <h3 className="text-2xl font-bold text-gray-900 mb-4">
-            How OPPAL Credits Work
-          </h3>
-          <p className="text-gray-600 max-w-2xl mx-auto mb-6">
-            Purchase credit packs and use them to unlock professional logo
-            designs. Credits never expire and can be used across the Leviathan
-            platform.
-          </p>
-          <div className="grid md:grid-cols-3 gap-6 text-center">
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-900 mb-2">10</div>
-              <div className="text-gray-600 text-sm">Standard Logo</div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-900 mb-2">20</div>
-              <div className="text-gray-600 text-sm">Premium Logo</div>
-            </div>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="text-2xl font-bold text-gray-900 mb-2">35</div>
-              <div className="text-gray-600 text-sm">Exclusive Logo</div>
-            </div>
-          </div>
         </div>
 
         {/* Message Display */}
