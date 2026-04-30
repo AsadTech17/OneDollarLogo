@@ -5,8 +5,6 @@ import ExamplesGallery from '../components/ExamplesGallery'
 import Pricing from '../components/Pricing'
 import WebsiteBundle from '../components/WebsiteBundle'
 import OfferTiers from '../components/OfferTiers'
-import FeaturesComparison from '../components/FeaturesComparison'
-import FAQ from '../components/FAQ'
 import VisualDivider from '../components/VisualDivider'
 // import Contact from '../components/Contact' // Moved to dedicated ContactPage
 
@@ -22,8 +20,6 @@ const Home = () => {
       </div>
       <WebsiteBundle />
       <OfferTiers />
-      <FeaturesComparison />
-      <FAQ />
       <VisualDivider />
     </div>
   );

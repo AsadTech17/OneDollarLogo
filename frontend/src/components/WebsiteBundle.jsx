@@ -1,86 +1,129 @@
+import React from "react";
+
 const WebsiteBundle = () => {
-  const bundleFeatures = [
-    "Premium Logo Package (20 OPPAL value)",
-    "Automated Handoff to EasyStartupSites.com",
-    "Brand pre-loaded and ready to customize",
-    "Professional website templates",
-    "Mobile-responsive design",
-    "Basic SEO setup included",
-    "24/7 support for both services"
-  ];
-
   return (
-    <section className="py-16 bg-white">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Upsell Card */}
-        <div className="relative">
-          {/* Subtle Glow Effect */}
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-100 to-purple-100 rounded-2xl blur-xl opacity-30"></div>
-          
-          {/* Card with Gradient Border */}
-          <div className="relative bg-white rounded-2xl p-1 border border-blue-200">
-            <div className="bg-gradient-to-r from-blue-50 via-purple-50 to-blue-50 rounded-2xl p-0.5">
-              <div className="bg-white rounded-2xl p-8 shadow-lg">
-                <div className="flex flex-col md:flex-row items-center justify-between gap-8">
-                  {/* Left Content */}
-                  <div className="flex-1">
-                    <div className="flex items-center mb-4">
-                      <div className="bg-blue-600 text-white px-4 py-2 rounded-full text-sm font-semibold mr-3">
-                        SPECIAL BUNDLE
-                      </div>
-                      <div className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-xs font-semibold border border-green-200">
-                        SAVE 25%
-                      </div>
-                    </div>
-                    
-                    <h3 className="text-3xl font-bold text-gray-900 mb-3">
-                      Logo + Website Bundle
-                    </h3>
-                    
-                    <p className="text-xl text-gray-600 mb-6">
-                      Premium Logo Package + Automated Handoff to EasyStartupSites.com
-                    </p>
+    <section className=" bg-white">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Dark Horizontal Banner */}
+        <div className="bg-[#0a192f] rounded-2xl p-8">
+          <div className="flex flex-col lg:flex-row items-center justify-between gap-8">
+            {/* Left Text Section */}
+            <div className="flex-1 text-center lg:text-left">
+              <h3 className="text-2xl md:text-3xl font-bold text-white mb-3">
+                Launch Your Logo + Website{" "}
+                <span className="text-red-600">Instantly</span>
+              </h3>
+              <p className="text-white text-sm md:text-base max-w-lg">
+                Create your logo, then send your brand directly into
+                EasyStartupSites.com for a fast website build.
+              </p>
+            </div>
 
-                    {/* Key Features */}
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center text-gray-600">
-                        <div className="w-4 h-4 bg-green-100 rounded-full mr-3 flex-shrink-0 flex items-center justify-center">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        </div>
-                        <span>Premium Logo Package (20 OPPAL value)</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <div className="w-4 h-4 bg-green-100 rounded-full mr-3 flex-shrink-0 flex items-center justify-center">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        </div>
-                        <span>Automated Handoff to EasyStartupSites.com</span>
-                      </div>
-                      <div className="flex items-center text-gray-600">
-                        <div className="w-4 h-4 bg-green-100 rounded-full mr-3 flex-shrink-0 flex items-center justify-center">
-                          <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                        </div>
-                        <span>Brand pre-loaded and ready to customize</span>
-                      </div>
-                    </div>
-                  </div>
+            {/* Center Icons & Process */}
+            <div className="flex items-center justify-center gap-4 md:gap-6">
+              {/* Icon 1: 1DollarLogo */}
+              <div className="flex flex-col items-center">
+                <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden mb-2 p-[1px]">
+                  <img
+                    src="/1DollarLogo - Block 6 (Icon 1) Home Page.png"
+                    alt="1DollarLogo"
+                    className="w-full h-full object-cover object-center scale-[1.75]"
+                  />
+                </div>
+                <span className="text-sm text-white font-medium">
+                  1DollarLogo
+                </span>
+              </div>
 
-                  {/* Right Content - Price & CTA */}
-                  <div className="flex flex-col items-center text-center">
-                    <div className="mb-4">
-                      <div className="text-5xl font-bold text-gray-900 mb-2">45</div>
-                      <div className="text-xl text-blue-600 font-semibold">OPPAL</div>
-                    </div>
-                    
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-xl text-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
-                      Get the Bundle
-                    </button>
-                    
-                    <p className="text-gray-600 text-sm mt-3">
-                      Instant setup with automated handoff
-                    </p>
-                  </div>
+              {/* Arrow 1 */}
+              <div className="text-white mb-6">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              </div>
+
+              {/* Icon 2: EasyStartupSites */}
+              <div className="flex flex-col items-center">
+                <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden mb-2 p-[4px]">
+                  <img
+                    src="/1DollarLogo - Block 6 (Icon 2) Home Page.png"
+                    alt="EasyStartupSites"
+                    className="w-full h-full object-cover object-center scale-[1.75]"
+                  />
+                </div>
+                <span className="text-sm text-white font-medium">
+                  EasyStartupSites
+                </span>
+              </div>
+
+              {/* Arrow 2 */}
+              <div className="text-white mb-6">
+                <svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={3}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              </div>
+
+              {/* Icon 3: Support */}
+              <div className="flex flex-col items-center">
+                <div className="w-20 h-20 bg-white rounded-2xl overflow-hidden mb-2 p-[4px]">
+                  <img
+                    src="/1DollarLogo - Block 6 (Icon 3) Home Page.png"
+                    alt="Support"
+                    className="w-full h-full object-cover object-center scale-[1.75]"
+                  />
+                </div>
+                <span className="text-sm text-white font-medium">Support</span>
+              </div>
+            </div>
+
+            {/* Right Pricing Section */}
+            <div className="flex flex-col items-center text-center">
+              <div className="mb-3">
+                <div className="text-sm text-white mb-1">
+                  Logo + Website Bundle
+                </div>
+                <div className="text-5xl font-bold text-green-500 mb-1">45</div>
+                <div className="text-sm text-green-400 font-semibold">
+                  OPPAL
                 </div>
               </div>
+
+              <button className="bg-red-600 hover:bg-red-700 text-white font-bold py-3 px-6 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2">
+                Launch My Brand
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 7l5 5m0 0l-5 5m5-5H6"
+                  />
+                </svg>
+              </button>
             </div>
           </div>
         </div>
