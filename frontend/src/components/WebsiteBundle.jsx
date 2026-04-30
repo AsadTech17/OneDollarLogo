@@ -2,7 +2,7 @@ import React from "react";
 
 const WebsiteBundle = () => {
   return (
-    <section className=" bg-white">
+    <section className="bg-white pb-0 mb-0">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Dark Horizontal Banner */}
         <div className="bg-[#0a192f] rounded-2xl p-8">
