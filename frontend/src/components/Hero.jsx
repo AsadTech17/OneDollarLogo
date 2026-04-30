@@ -64,11 +64,12 @@ const Hero = () => {
                 </button>
 
                 {/* View Examples Button */}
-                <button
+                <a
+                  href="#examples-gallery"
                   className="bg-white hover:bg-gray-50 text-blue-900 font-bold py-3 px-6 rounded-full border-2 border-blue-900 transition-all duration-200 transform hover:scale-105"
                 >
                   View Examples
-                </button>
+                </a>
               </div>
 
               {/* Features Bar */}
@@ -138,11 +139,12 @@ const Hero = () => {
                   </button>
 
                   {/* View Examples Button */}
-                  <button
+                  <a
+                    href="#examples-gallery"
                     className="bg-white hover:bg-gray-50 text-blue-900 font-bold py-3 px-6 rounded-full border-2 border-blue-900 transition-all duration-200 transform hover:scale-105"
                   >
                     View Examples
-                  </button>
+                  </a>
                 </div>
               </div>
 
