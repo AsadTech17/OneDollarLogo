@@ -2,7 +2,7 @@ import React from 'react';
 
 const Footer = () => {
   return (
-    <footer className="bg-[#010816] text-white py-6 px-4 md:px-10 border-t border-gray-800">
+    <footer className="bg-[#010816] text-white py-6 px-4 md:px-10 border-t border-gray-800 z-10">
       {/* FontAwesome CDN for Icons */}
       <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
 

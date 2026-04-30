@@ -59,7 +59,6 @@ const Navbar = () => {
     { name: 'Home', href: '/', isRoute: true },
     { name: 'How It Works', href: '#how-it-works' },
     { name: 'Pricing', href: '#pricing-section', isPricingLink: true },
-    { name: 'FAQ', href: '#faq' },
     { name: 'Contact', href: '/contact', isRoute: true }
   ];
 
