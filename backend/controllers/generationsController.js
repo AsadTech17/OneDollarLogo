@@ -1,6 +1,7 @@
 import OpenAI from 'openai';
 import { db, admin } from '../firebaseAdmin.js';
 import { v2 as cloudinary } from 'cloudinary';
+import axios from 'axios';
 
 // Get user's generations
 export const getUserGenerations = async (req, res) => {
@@ -179,7 +180,7 @@ export const getUserUnlocks = async (req, res) => {
 export const getUserUnlocksHandler = getUserUnlocks;
 
 // Generate brand DNA and logos using OpenAI GPT-4o and DALL-E 3
-// Unlock logo endpoint
+// Unlock logo endpoint with Exclusive Plan Vectorization
 export const unlockLogo = async (req, res) => {
   try {
     const { generationId, logoIndex, selectedTier } = req.body;
@@ -201,22 +202,20 @@ export const unlockLogo = async (req, res) => {
       });
     }
 
-    // Define tier costs
-    const tierCosts = {
-      Standard: 10,
-      Premium: 20,
-      Exclusive: 35
-    };
-
-    const cost = tierCosts[selectedTier];
-    if (!cost) {
+    // PRICING LOGIC FIRST - Determine cost based on tier (case-insensitive)
+    const tier = selectedTier;
+    console.log("Processing tier:", tier);
+    
+    const cost = tier.toLowerCase() === 'exclusive' ? 35 : (tier.toLowerCase() === 'premium' ? 20 : 10);
+    console.log("Calculated cost:", cost);
+    
+    if (!tier || (tier.toLowerCase() !== 'exclusive' && tier.toLowerCase() !== 'premium' && tier.toLowerCase() !== 'standard')) {
+      console.log('❌ Invalid tier selected:', tier);
       return res.status(400).json({
         success: false,
         message: 'Invalid tier selected'
       });
     }
-
-    console.log('💰 Checking user balance for', cost, 'OPPAL');
 
     // Check user's current OPPAL balance
     const userDoc = await db.collection('users').doc(userId).get();
@@ -253,7 +252,7 @@ export const unlockLogo = async (req, res) => {
       });
     }
 
-    console.log('💳 Deducting', cost, 'OPPAL from user balance');
+    console.log('💳 Deducting', cost, 'OPPAL from user balance for tier:', selectedTier);
 
     // Deduct credits from user balance
     await db.collection('users').doc(userId).update({
@@ -261,25 +260,196 @@ export const unlockLogo = async (req, res) => {
       lastUnlockedAt: admin.firestore.FieldValue.serverTimestamp()
     });
 
-    // Create unlock record
-    await db.collection('users').doc(userId)
-      .collection('unlocks').doc(unlockId).set({
-        generationId,
-        logoIndex,
-        tier: selectedTier,
-        cost,
-        unlockedAt: admin.firestore.FieldValue.serverTimestamp()
+    // Get the generation data to access the logo URL
+    const generationDoc = await db.collection('users').doc(userId)
+      .collection('generations').doc(generationId).get();
+
+    if (!generationDoc.exists) {
+      return res.status(404).json({
+        success: false,
+        message: 'Generation not found'
       });
+    }
 
-    console.log('✅ Logo unlocked successfully');
+    const generationData = generationDoc.data();
+    const logoUrls = generationData.logoUrls || [];
+    
+    if (logoIndex >= logoUrls.length) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid logo index'
+      });
+    }
 
-    return res.json({
+    const originalImageUrl = logoUrls[logoIndex];
+
+    // Create unlock record
+    const unlockData = {
+      generationId,
+      logoIndex,
+      tier: selectedTier,
+      cost,
+      unlockedAt: admin.firestore.FieldValue.serverTimestamp(),
+      originalImageUrl
+    };
+
+    // EXCLUSIVE PLAN: Trigger vectorization BEFORE saving to database
+    if (selectedTier.toLowerCase() === 'exclusive') {
+      console.log('🚀 VECTORIZATION STARTING FOR SESSION:', generationId);
+      
+      let svgUrl = null;
+      
+      try {
+        // 1. Fetch the image as a Blob using native fetch
+        const imageRes = await fetch(originalImageUrl);
+        if (!imageRes.ok) throw new Error('Cloudinary image fetch failed');
+        const imageBlob = await imageRes.blob();
+
+        // 2. Use NATIVE FormData (Do NOT import from 'form-data')
+        const formData = new FormData();
+        formData.append('image', imageBlob, 'logo.jpg');
+
+        // 3. Prepare Auth
+        const authString = Buffer.from(`${process.env.API_ID}:${process.env.API_SECRET}`).toString('base64');
+
+        // 4. Send request using NATIVE fetch
+        const response = await fetch('https://vectorizer.ai/api/v1/vectorize?mode=test&out.svg.simplify=true', {
+            method: 'POST',
+            headers: {
+                'Authorization': `Basic ${authString}` 
+                // Do NOT set Content-Type header manually, fetch will do it with the correct boundary
+            },
+            body: formData
+        });
+
+        if (!response.ok) {
+            const errorMsg = await response.text();
+            throw new Error(`Vectorizer API Error: ${response.status} - ${errorMsg}`);
+        }
+
+        // 1. Get the result as an arrayBuffer
+        const arrayBuffer = await response.arrayBuffer();
+        const vectorizedBuffer = Buffer.from(arrayBuffer);
+
+        // 2. CHECK: Agar response XML/SVG hai (Test mode mein yahi hota hai)
+        const firstFewChars = vectorizedBuffer.toString('utf8', 0, 50);
+        let cloudinaryResponse;
+        
+        if (firstFewChars.includes('<?xml') || firstFewChars.includes('<svg')) {
+            console.log("✅ Received SVG/XML data. Saving as SVG...");
+            
+            const svgSizeBytes = vectorizedBuffer.length;
+
+            // Validate SVG size (must be under 5MB)
+            const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+            if (svgSizeBytes > maxSizeBytes) {
+              throw new Error(`SVG size (${svgSizeBytes} bytes) exceeds 5MB limit`);
+            }
+
+            // Upload SVG to Cloudinary
+            console.log('☁️ Uploading SVG to Cloudinary...');
+            try {
+                cloudinaryResponse = await cloudinary.uploader.upload(`data:image/svg+xml;base64,${vectorizedBuffer.toString('base64')}`, {
+                    folder: '1dollarlogo/vectorized-logos',
+                    public_id: `vectorized_${userId}_${generationId}_${logoIndex}`,
+                    resource_type: 'raw', // <--- YE SABSE ZAROORI HAI (SVG ko raw treat karna parta hai)
+                    format: 'svg'        // <--- Force extension to SVG
+                });
+                console.log('✅ Cloudinary upload successful:', cloudinaryResponse.secure_url);
+            } catch (uploadError) {
+                console.error('❌ Cloudinary upload failed:', uploadError);
+                
+                // Check if size is the issue
+                if (uploadError.message && uploadError.message.includes('size') || 
+                    uploadError.message && uploadError.message.includes('limit') ||
+                    uploadError.message && uploadError.message.includes('too large')) {
+                    console.error('🔍 Size issue detected - SVG size:', svgSizeBytes, 'bytes');
+                    throw new Error(`SVG file size (${svgSizeBytes} bytes) is too large for upload. Maximum allowed is 5MB.`);
+                } else {
+                    console.error('🔍 Other upload error:', uploadError.message);
+                    throw new Error(`Failed to upload SVG to Cloudinary: ${uploadError.message}`);
+                }
+            }
+        } else {
+            // Agar JSON error aata hai toh yahan handle karein
+            console.log("Received other format.");
+            const responseText = vectorizedBuffer.toString('utf8');
+            console.log("Response preview:", responseText.substring(0, 200));
+            throw new Error(`Unexpected response format. Expected SVG/XML but received: ${responseText.substring(0, 100)}...`);
+        }
+
+        svgUrl = cloudinaryResponse.secure_url;
+        console.log('🔗 SVG URL generated:', svgUrl);
+
+        // Add SVG URL to unlock data BEFORE saving to database
+        unlockData.svgUrl = svgUrl;
+        unlockData.vectorizationStatus = 'completed';
+        unlockData.vectorizedAt = admin.firestore.FieldValue.serverTimestamp();
+
+        console.log('✅ Vectorization completed successfully - saving to database with SVG URL');
+
+      } catch (error) {
+        console.error("Vectorization Failed:", error.message);
+        
+        try {
+          // Refund full 35 OPPAL for Exclusive tier
+          await db.collection('users').doc(userId).update({
+            credits: admin.firestore.FieldValue.increment(35)
+          });
+
+          console.log('💸 Refunded full 35 OPPAL due to vectorization failure');
+          
+          return res.status(500).json({
+            success: false,
+            message: 'Vectorization failed for Exclusive tier. Credits refunded.',
+            error: error.message,
+            creditsRefunded: 35
+          });
+          
+        } catch (refundError) {
+          console.error('❌ Credit refund failed:', refundError);
+          
+          return res.status(500).json({
+            success: false,
+            message: 'Vectorization failed and credit refund failed. Please contact support.',
+            error: error.message
+          });
+        }
+      }
+    }
+
+    // STRICT AWAIT: Save unlock record AFTER vectorization is complete
+    console.log('💾 Saving unlock record to database...');
+    await db.collection('users').doc(userId)
+      .collection('unlocks').doc(unlockId).set(unlockData);
+    console.log('✅ Unlock record saved to database with svgUrl:', !!unlockData.svgUrl);
+
+    // FINAL CHECK: For Exclusive tier, ensure svgUrl is available before sending response
+    if (selectedTier.toLowerCase() === 'exclusive') {
+      console.log("Vectorization result:", unlockData.svgUrl);
+      
+      if (!unlockData.svgUrl) {
+        console.error('❌ SVG URL missing for Exclusive tier - not sending response yet');
+        return res.status(500).json({
+          success: false,
+          message: 'Vectorization failed to complete properly - no SVG URL available'
+        });
+      }
+    }
+
+    console.log('✅ Logo unlocked successfully - sending response with svgUrl:', !!unlockData.svgUrl);
+
+    return res.status(200).json({
       success: true,
-      message: 'Logo unlocked successfully',
+      message: selectedTier.toLowerCase() === 'exclusive' && unlockData.svgUrl 
+        ? 'Exclusive logo unlocked with vectorization' 
+        : 'Logo unlocked successfully',
       data: {
         tier: selectedTier,
-        cost,
-        remainingBalance: currentBalance - cost
+        cost: unlockData.cost || cost,
+        remainingBalance: currentBalance - (unlockData.cost || cost),
+        svgUrl: unlockData.svgUrl || null,
+        vectorizationStatus: unlockData.vectorizationStatus || 'not_applicable'
       }
     });
 

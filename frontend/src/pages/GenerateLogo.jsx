@@ -18,6 +18,7 @@ const GenerateLogo = () => {
   const [selectedTier, setSelectedTier] = useState('Standard');
   const [isUnlocking, setIsUnlocking] = useState(false);
   const [unlockedLogos, setUnlockedLogos] = useState(new Set()); // Tracks generationId_index combinations
+  const [vectorizingLogos, setVectorizingLogos] = useState(new Set()); // Track logos being vectorized
   const [currentGenerationId, setCurrentGenerationId] = useState(null);
   const [userCredits, setUserCredits] = useState(0);
   const [isCreditsLoading, setIsCreditsLoading] = useState(false);
@@ -247,7 +248,7 @@ const GenerateLogo = () => {
     try {
       setIsUnlocking(true);
       
-      console.log('🔐 Unlocking logo:', selectedLogo.index, 'Tier:', selectedTier);
+      console.log(' Unlocking logo:', selectedLogo.index, 'Tier:', selectedTier);
       
       const response = await api.post('/api/unlock-logo', {
         generationId: generatedLogos.generationId,
@@ -265,14 +266,63 @@ const GenerateLogo = () => {
         setUnlockedLogos(newUnlocked);
         console.log('🔓 Added unlock combination:', unlockKey);
         
-        // Close modal
+        // Close modal ONLY after successful unlock
         setShowUnlockModal(false);
         
-        // Trigger download after successful unlock
-        handleDownload(selectedLogo.imageUrl, selectedLogo.style, selectedLogo.index);
+        // For Exclusive tier, SVG should be available due to strict await
+        if (selectedTier === 'Exclusive') {
+          if (response.data.data.svgUrl) {
+            console.log('✅ SVG URL available in response, downloading SVG:', response.data.data.svgUrl);
+            toast.success('Exclusive logo unlocked with vectorization! Downloading SVG...');
+            
+            // Wait a moment for state to refresh, then download SVG directly
+            setTimeout(async () => {
+              try {
+                const svgResponse = await fetch(response.data.data.svgUrl);
+                if (!svgResponse.ok) {
+                  throw new Error(`HTTP error! status: ${svgResponse.status}`);
+                }
+                
+                const svgBlob = await svgResponse.blob();
+                const svgObjectUrl = URL.createObjectURL(svgBlob);
+                
+                // Generate SVG filename
+                const brandName = generatedLogos?.brandName || businessIdea.trim().split(' ')[0] || 'logo';
+                const cleanBrandName = brandName.replace(/[^a-zA-Z0-9]/g, '_');
+                const cleanLogoStyle = selectedLogo.style.replace(/[^a-zA-Z0-9]/g, '_');
+                const svgFilename = `1DollarLogo-${cleanBrandName}-${cleanLogoStyle}.svg`;
+                
+                // Create hidden anchor element for SVG
+                const svgLink = document.createElement('a');
+                svgLink.href = svgObjectUrl;
+                svgLink.download = svgFilename;
+                svgLink.style.display = 'none';
+                
+                document.body.appendChild(svgLink);
+                svgLink.click();
+                
+                setTimeout(() => {
+                  document.body.removeChild(svgLink);
+                  URL.revokeObjectURL(svgObjectUrl);
+                }, 100);
+                
+                console.log('✅ SVG downloaded successfully as:', svgFilename);
+              } catch (svgError) {
+                console.error('❌ Error downloading SVG:', svgError);
+                toast.error('Failed to download SVG. Please try downloading manually.');
+              }
+            }, 1000); // Wait 1 second for state to refresh
+          } else {
+            console.log('❌ SVG URL not available in response - this should not happen with strict await');
+            toast.error('Vectorization failed. Please try again.');
+          }
+        } else {
+          // Trigger download for non-Exclusive tiers
+          handleDownload(selectedLogo.imageUrl, selectedLogo.style, selectedLogo.index, selectedTier);
+        }
         
         // Show success toast
-        toast.success(`Success! ${response.data.data.cost} OPPAL deducted. Your clean logo is ready for download.`);
+        toast.success(`Success! ${response.data.data.cost} OPPAL deducted.`);
         
         // Refresh credits after successful unlock
         try {
@@ -303,24 +353,106 @@ const GenerateLogo = () => {
     }
   };
 
-  const handleDownload = async (imageUrl, logoStyle, index) => {
+  const handleDownload = async (imageUrl, logoStyle, index, selectedTier = null) => {
     try {
       setDownloadingLogo(index);
       
-      console.log('🔄 Starting download for:', logoStyle, imageUrl);
+      console.log('🔄 Starting download for:', logoStyle, imageUrl, 'Tier:', selectedTier);
       
-      // Fetch the image as a blob
+      // For Exclusive plan, check if SVG is available
+      if (selectedTier === 'Exclusive') {
+        console.log('🔍 Checking for SVG download for Exclusive plan');
+        
+        try {
+          // Get unlock data to check for SVG URL
+          const unlockResponse = await api.get(`/api/unlocks/${user.uid}`);
+          console.log('📥 Unlock data received:', unlockResponse.data);
+          
+          if (unlockResponse.data.success && unlockResponse.data.unlocks) {
+            const unlockKey = `${generatedLogos.generationId}_${index}`;
+            console.log('🔍 Looking for unlock key:', unlockKey);
+            
+            const unlockData = unlockResponse.data.unlocks.find(u => {
+              const dataKey = `${u.generationId}_${u.logoIndex}`;
+              console.log('🔍 Comparing keys:', dataKey, '===', unlockKey);
+              return dataKey === unlockKey;
+            });
+            
+            console.log('🔍 Found unlock data:', unlockData);
+            
+            if (unlockData && unlockData.svgUrl && unlockData.vectorizationStatus === 'completed') {
+              console.log('✅ SVG URL found, downloading SVG:', unlockData.svgUrl);
+              
+              // Download SVG
+              const svgResponse = await fetch(unlockData.svgUrl);
+              
+              if (!svgResponse.ok) {
+                throw new Error(`HTTP error! status: ${svgResponse.status}`);
+              }
+              
+              const svgBlob = await svgResponse.blob();
+              console.log('📦 SVG Blob created, size:', svgBlob.size, 'type:', svgBlob.type);
+              
+              const svgObjectUrl = URL.createObjectURL(svgBlob);
+              
+              // Generate SVG filename
+              const brandName = generatedLogos?.brandName || businessIdea.trim().split(' ')[0] || 'logo';
+              const cleanBrandName = brandName.replace(/[^a-zA-Z0-9]/g, '_');
+              const cleanLogoStyle = logoStyle.replace(/[^a-zA-Z0-9]/g, '_');
+              const svgFilename = `1DollarLogo-${cleanBrandName}-${cleanLogoStyle}.svg`;
+              
+              // Create hidden anchor element for SVG
+              const svgLink = document.createElement('a');
+              svgLink.href = svgObjectUrl;
+              svgLink.download = svgFilename;
+              svgLink.style.display = 'none';
+              
+              document.body.appendChild(svgLink);
+              svgLink.click();
+              
+              setTimeout(() => {
+                document.body.removeChild(svgLink);
+                URL.revokeObjectURL(svgObjectUrl);
+              }, 100);
+              
+              console.log('✅ SVG downloaded successfully as:', svgFilename);
+              return; // Exit early for SVG download
+            } else if (unlockData && unlockData.vectorizationStatus === 'failed') {
+              console.log('⚠️ Vectorization failed, falling back to PNG');
+              toast.error('Vectorization failed. Downloading PNG instead.');
+            } else if (unlockData && unlockData.vectorizationStatus === 'processing') {
+              console.log('⏳ Vectorization still processing, downloading PNG for now');
+              toast.warning('Vectorization still in progress. PNG downloaded now, SVG will be available soon.');
+            } else {
+              console.log('⚠️ No SVG URL found in unlock data, falling back to PNG');
+              console.log('🔍 Unlock data details:', {
+                hasUnlockData: !!unlockData,
+                hasSvgUrl: !!(unlockData && unlockData.svgUrl),
+                vectorizationStatus: unlockData?.vectorizationStatus,
+                svgUrl: unlockData?.svgUrl
+              });
+            }
+          } else {
+            console.log('⚠️ No unlock data found, falling back to PNG');
+          }
+        } catch (svgError) {
+          console.error('❌ Error checking SVG availability:', svgError);
+          console.log('🔄 Falling back to PNG download');
+        }
+      }
+      
+      // Fallback to PNG download (for non-Exclusive plans or if SVG not available)
+      console.log('📥 Downloading PNG file');
+      
       const response = await fetch(imageUrl);
       
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
-      // Convert response to blob
       const blob = await response.blob();
-      console.log('📦 Blob created, size:', blob.size, 'type:', blob.type);
+      console.log('📦 PNG Blob created, size:', blob.size, 'type:', blob.type);
       
-      // Create object URL from blob
       const objectUrl = URL.createObjectURL(blob);
       
       // Generate clean filename
@@ -335,7 +467,6 @@ const GenerateLogo = () => {
       link.download = filename;
       link.style.display = 'none';
       
-      // Add to DOM, trigger click, and clean up
       document.body.appendChild(link);
       link.click();
       
@@ -345,7 +476,7 @@ const GenerateLogo = () => {
         URL.revokeObjectURL(objectUrl);
       }, 100);
       
-      console.log('✅ Logo downloaded successfully as:', filename);
+      console.log('✅ PNG downloaded successfully as:', filename);
     } catch (error) {
       console.error('❌ Error downloading logo:', error);
       
@@ -646,7 +777,7 @@ const GenerateLogo = () => {
                           ) : unlockedLogos.has(`${generatedLogos.generationId}_${index}`) ? (
                             <>
                               <Download className="w-4 h-4 mr-2" />
-                              Download Clean Version
+                              Download
                             </>
                           ) : (
                             <>
