@@ -1,247 +1,287 @@
-# OneDollarLogo API Routes Documentation
+# OneDollarLogo API Routes
 
-## Overview
-
-This document outlines the available API endpoints for the OneDollarLogo application.
+This document reflects the routes currently wired in `backend/server.js` and the active controller behavior.
 
 ## Base URL
 
-```
+```text
 http://localhost:5000
 ```
 
 ## Authentication
 
-Most endpoints require Firebase ID token authentication. Include the token in the Authorization header:
+Authenticated endpoints require Firebase ID token:
 
-```
+```text
 Authorization: Bearer <firebase_id_token>
 ```
 
-## Endpoints
+The backend validates tokens using Firebase Admin in `middleware/auth.js`.
 
-### POST /api/generate-logo
+## Health and Root
 
-Generates logos based on a business idea description.
+### GET /
 
-**Authentication**: Required (Firebase ID token)
+- Auth: No
+- Description: API root message
+- Response:
 
-**Rate Limiting**: 10 requests per 10 minutes per user
+```json
+{ "message": "Welcome to OneDollarLogo API" }
+```
 
-**Request Body**:
+### GET /api/health
+
+- Auth: No
+- Description: Service health ping
+- Response:
+
+```json
+{ "status": "OK", "timestamp": "2026-05-08T00:00:00.000Z" }
+```
+
+## User Routes
+
+### POST /api/users/create
+
+- Auth: No (expects data needed by controller)
+- Description: Create/sync user in Firestore
+
+### GET /api/users/profile
+
+- Auth: No direct middleware on route (controller-level behavior applies)
+- Description: Fetch user profile data
+
+## Generation Routes
+
+### POST /api/generate
+
+- Auth: Yes
+- Description: Main logo generation flow (brand strategy + 4 logos)
+- Current AI flow:
+  - GPT-4o generates brand DNA JSON
+  - DALL-E 3 generates 4 logo images
+  - Images uploaded to Cloudinary
+  - Generation saved to Firestore under `users/{uid}/generations/{generationId}`
+
+Request body:
+
 ```json
 {
-  "businessIdea": "A modern coffee shop with minimalist design and sustainable practices"
+  "businessIdea": "AI-powered invoicing app for freelancers"
 }
 ```
 
-**Request Headers**:
-```
-Content-Type: application/json
-Authorization: Bearer <firebase_id_token>
-```
+Success response (shape):
 
-**Response**:
 ```json
 {
   "success": true,
   "data": {
-    "businessIdea": "A modern coffee shop with minimalist design and sustainable practices",
-    "brandName": "Modern Coffee",
-    "niche": "Coffee Shop",
-    "vibe": "Modern Minimalist",
-    "prompts": [
-      "Modern minimalist coffee logo with clean lines",
-      "Sustainable coffee shop logo with leaf elements",
-      "Contemporary coffee brand with geometric shapes",
-      "Artisan coffee logo with typography focus"
-    ],
+    "brandName": "FreelanceFlow",
+    "vibe": "modern, reliable",
+    "colorPalette": ["#111827", "#2563EB", "#14B8A6", "#F59E0B"],
+    "businessIdea": "AI-powered invoicing app for freelancers",
     "logos": [
       {
-        "style": "Modern Minimalist",
-        "description": "Clean and contemporary design with subtle coffee elements",
-        "colors": ["#2C3E50", "#E74C3C", "#ECF0F1"],
-        "typography": "Sans-serif, clean and modern",
-        "values": ["Simplicity", "Quality", "Sustainability"],
-        "imageUrl": "https://res.cloudinary.com/dfxroib8m/image/upload/one_dollar_logos/...",
-        "cloudinaryUrl": "https://res.cloudinary.com/dfxroib8m/image/upload/one_dollar_logos/...",
-        "cloudinaryPublicId": "modern_coffee_logo_1_1234567890",
-        "cloudinaryFormat": "png",
-        "cloudinaryWidth": 1024,
-        "cloudinaryHeight": 1024,
-        "generatedAt": "2023-12-07T10:30:00.000Z"
+        "id": 0,
+        "style": "Icon",
+        "imageUrl": "https://res.cloudinary.com/...png",
+        "originalUrl": "https://oaidalleapiprodscus.blob.core.windows.net/...",
+        "prompt": "...",
+        "revisedPrompt": "...",
+        "description": "Icon design for FreelanceFlow",
+        "publicId": "1dollarlogo_..."
       }
     ],
-    "generatedAt": "2023-12-07T10:30:00.000Z",
-    "generationId": "L97DzampOLXOqx2YaRyI",
-    "remainingCredits": 5,
-    "uploadSummary": {
-      "total": 4,
-      "successful": 4,
-      "failed": 0
-    }
+    "generationId": "firestore_doc_id"
   }
 }
 ```
 
-**Error Responses**:
+Common errors:
 
-400 Bad Request:
-```json
-{
-  "success": false,
-  "message": "Invalid business idea provided"
-}
-```
-
-401 Unauthorized:
-```json
-{
-  "success": false,
-  "message": "Authentication required"
-}
-```
-
-429 Too Many Requests:
-```json
-{
-  "success": false,
-  "message": "Rate limit exceeded. Please try again later."
-}
-```
-
-500 Internal Server Error:
-```json
-{
-  "success": false,
-  "message": "Internal server error"
-}
-```
+- `400`: invalid or too-short `businessIdea`
+- `401`: missing/invalid Firebase token
+- `500`: provider/config/runtime error
 
 ### GET /api/generations/:uid
 
-Retrieves all logo generations for a specific user.
+- Auth: No route middleware currently attached
+- Description: Returns latest generation for user (or empty array fallback)
 
-**Authentication**: Required (Firebase ID token)
+Success response (shape):
 
-**Parameters**:
-- `uid` (path): User ID from Firebase Authentication
-
-**Request Headers**:
-```
-Authorization: Bearer <firebase_id_token>
-```
-
-**Response**:
 ```json
 {
   "success": true,
-  "data": [
+  "data": {
+    "brandName": "Brand",
+    "vibe": "Modern",
+    "colorPalette": ["#3B82F6", "#10B981", "#F59E0B", "#EF4444"],
+    "businessIdea": "...",
+    "logos": [],
+    "generationId": "..."
+  }
+}
+```
+
+### GET /api/unlocks/:userId
+
+- Auth: No route middleware currently attached
+- Description: Returns unlock records for the user
+
+Success response (shape):
+
+```json
+{
+  "success": true,
+  "unlocks": [
     {
-      "id": "L97DzampOLXOqx2YaRyI",
-      "businessIdea": "A modern coffee shop with minimalist design",
-      "brandName": "Modern Coffee",
-      "niche": "Coffee Shop",
-      "vibe": "Modern Minimalist",
-      "createdAt": "2023-12-07T10:30:00.000Z",
-      "logos": [
-        {
-          "style": "Modern Minimalist",
-          "description": "Clean and contemporary design",
-          "imageUrl": "https://res.cloudinary.com/dfxroib8m/image/upload/...",
-          "cloudinaryUrl": "https://res.cloudinary.com/dfxroib8m/image/upload/...",
-          "generatedAt": "2023-12-07T10:30:00.000Z"
-        }
-      ]
+      "id": "generationId_logoIndex",
+      "generationId": "abc123",
+      "logoIndex": 0,
+      "tier": "exclusive",
+      "cost": 35,
+      "unlockedAt": "2026-05-08T00:00:00.000Z"
     }
   ]
 }
 ```
 
-**Error Responses**:
+### POST /api/unlock-logo
 
-401 Unauthorized:
+- Auth: Yes
+- Description: Deduct OPPAL credits and unlock selected logo tier
+
+Request body:
+
 ```json
 {
-  "success": false,
-  "message": "Authentication required"
+  "generationId": "abc123",
+  "logoIndex": 0,
+  "selectedTier": "exclusive"
 }
 ```
 
-404 Not Found:
+Tier costs:
+
+- `standard`: 10
+- `premium`: 20
+- `exclusive`: 35
+
+Exclusive behavior:
+
+- Triggers Vectorizer.AI
+- Uploads SVG output to Cloudinary
+- Stores `svgUrl` and `vectorizationStatus` in unlock doc
+- Refunds 35 credits if vectorization fails
+
+Success response (shape):
+
 ```json
 {
-  "success": false,
-  "message": "No generations found for this user"
+  "success": true,
+  "message": "Exclusive logo unlocked with vectorization",
+  "data": {
+    "tier": "exclusive",
+    "cost": 35,
+    "remainingBalance": 120,
+    "svgUrl": "https://res.cloudinary.com/...svg",
+    "vectorizationStatus": "completed"
+  }
 }
 ```
 
-## Input Validation
+## Credits Routes
 
-### Business Idea Requirements
+### POST /api/credits/buy-pack
 
-- **Minimum Length**: 10 characters
-- **Maximum Length**: 300 characters
-- **Content Filter**: Offensive language is not allowed
+- Auth: Yes
+- Description: Disabled intentionally for security
+- Response: `403` with message to use Stripe checkout
 
-### Offensive Keywords Filter
+### GET /api/credits/balance
 
-The following keywords are blocked:
-- Explicit content: porn, sex, sexual, erotic, adult, xxx, nsfw, escort, prostitute, hooker, stripper, strip club
-- Drug-related: drugs, cocaine, heroin, marijuana, weed
-- Violence: kill, murder, suicide, death, violent
-- Hate speech: hate, racist, nazi, terrorism, bomb
-- Illegal activities: illegal, criminal, fraud, scam, theft
+- Auth: Yes
+- Description: Returns user credit balance
 
-## Rate Limiting
+### GET /api/credits/packs
 
-### /api/generate-logo
+- Auth: No
+- Description: Returns available credit packs
 
-- **Limit**: 10 requests per 10 minutes
-- **Window**: 10 minutes sliding window
-- **Per User**: Rate limiting is applied per authenticated user
-- **Headers**: Rate limit information is included in response headers
+### GET /api/credits/tiers
 
-## Error Handling
+- Auth: No
+- Description: Returns unlock spending tiers
 
-### Common Error Codes
+## Stripe Routes
 
-- **400**: Bad Request - Invalid input or validation errors
-- **401**: Unauthorized - Missing or invalid authentication
-- **403**: Forbidden - User not authorized for this action
-- **404**: Not Found - Resource not found
-- **429**: Too Many Requests - Rate limit exceeded
-- **500**: Internal Server Error - Server-side errors
+### POST /api/stripe/create-checkout-session
 
-### Error Response Format
+- Auth: Yes
+- Description: Creates Stripe Checkout session for selected plan
 
-All error responses follow this format:
+Request body:
+
 ```json
 {
-  "success": false,
-  "message": "Human-readable error description",
-  "error": "Detailed error code (development only)"
+  "planName": "starter"
 }
 ```
 
-## Cloudinary Integration
+Plan mapping:
 
-Generated logos are automatically uploaded to Cloudinary for permanent storage:
+- `starter` => $9.00 => 25 credits
+- `growth` => $24.00 => 75 credits
+- `pro` => $45.00 => 150 credits
+- `enterprise` => $79.00 => 300 credits
 
-- **Folder**: `one_dollar_logos`
-- **Format**: PNG
-- **Quality**: Auto-optimized
-- **URLs**: Permanent Cloudinary URLs returned in response
+### POST /api/stripe/webhook
 
-## Firebase Integration
+- Auth: Stripe signature (not Firebase auth)
+- Description: Stripe webhook receiver (raw body)
+- Notes:
+  - Signature verified using `STRIPE_WEBHOOK_SECRET`
+  - Responds quickly, then processes in background
+  - Uses `processed_payments/{sessionId}` for idempotency before credit increment
 
-- **Authentication**: Firebase ID tokens for user verification
-- **Firestore**: Stores generation data and metadata
-- **Storage**: Cloudinary used instead of Firebase Storage for better performance
+## Legacy / Auxiliary Routes
 
-## Development Notes
+### POST /api/generate-logo
 
-- **Environment**: Set `NODE_ENV=development` for detailed error messages
-- **CORS**: Enabled for frontend development
-- **Logging**: Error-only logging in production
-- **Rate Limiting**: Configurable via environment variables
+- Auth: No Firebase middleware on route
+- Middleware: rate limiter + credit check + deduct
+- Status: Legacy flow (controller currently returns `"Coming Soon"`)
+
+Rate limit:
+
+- 10 requests / 10 minutes
+
+### GET /api/logo-service/health
+
+- Auth: No
+- Status: Depends on legacy logo service controller behavior
+
+### GET /api/download-image?url=<encoded-url>
+
+- Auth: No
+- Description: Proxy endpoint for image download/CORS bypass
+- Behavior: Fetches remote image and streams as attachment
+
+## Common Status Codes
+
+- `200`: success
+- `400`: bad request / validation issue
+- `401`: auth required or invalid token
+- `403`: forbidden action
+- `404`: resource not found
+- `429`: rate limit exceeded
+- `500`: internal error
+
+## Notes
+
+- Source of truth for routes: `backend/server.js`
+- Source of truth for generation/unlock logic: `backend/controllers/generationsController.js`
+- Source of truth for payments: `backend/controllers/stripeController.js`
