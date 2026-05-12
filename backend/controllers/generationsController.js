@@ -7,9 +7,9 @@ import axios from 'axios';
 export const getUserGenerations = async (req, res) => {
   try {
     const { uid } = req.params;
-    
+
     console.log('🔍 API called: GET /api/generations/:uid with uid:', uid);
-    
+
     if (!uid) {
       console.log('❌ Error: User ID is missing');
       return res.status(200).json({
@@ -28,7 +28,7 @@ export const getUserGenerations = async (req, res) => {
     console.log('🔥 Firestore query created, executing...');
     const snapshot = await generationsRef.get();
     console.log('📊 Firestore query completed, docs found:', snapshot.docs.length);
-    
+
     if (snapshot.empty) {
       console.log('✅ No generations found for user:', uid, '- returning empty array');
       return res.status(200).json({
@@ -47,7 +47,6 @@ export const getUserGenerations = async (req, res) => {
 
     console.log('📋 Raw generation data:', {
       id: generationData.id,
-      businessIdea: generationData.businessIdea,
       brandDNA: generationData.brandDNA ? 'exists' : 'missing',
       logoUrls: generationData.logoUrls?.length || 0,
       createdAt: generationData.createdAt
@@ -55,10 +54,10 @@ export const getUserGenerations = async (req, res) => {
 
     // Transform the data to match the frontend expected format
     const formattedData = {
-      brandName: generationData.brandDNA?.brandName || generationData.businessIdea?.split(' ')[0] || 'Brand',
+      brandName: generationData.brandDNA?.brandName || 'Brand',
       vibe: generationData.brandDNA?.vibe || 'Modern',
       colorPalette: generationData.brandDNA?.colorPalette || ['#3B82F6', '#10B981', '#F59E0B', '#EF4444'],
-      businessIdea: generationData.businessIdea || '',
+
       logos: (generationData.logoUrls || []).map((imageUrl, index) => {
         const styles = ['Icon', 'Wordmark', 'Abstract', 'Modern'];
         return {
@@ -92,7 +91,7 @@ export const getUserGenerations = async (req, res) => {
       code: error.code,
       details: error.details
     });
-    
+
     // Return empty array instead of 500 error for any Firestore issues
     console.log('🔄 Returning empty array due to error');
     return res.status(200).json({
@@ -109,9 +108,9 @@ export const getUserGenerationsHandler = getUserGenerations;
 export const getUserUnlocks = async (req, res) => {
   try {
     const { userId } = req.params;
-    
+
     console.log('🔓 API called: GET /api/unlocks/:userId with userId:', userId);
-    
+
     if (!userId) {
       console.log('❌ Error: User ID is missing');
       return res.status(200).json({
@@ -126,7 +125,7 @@ export const getUserUnlocks = async (req, res) => {
     const unlocksRef = db.collection('users').doc(userId).collection('unlocks');
     const snapshot = await unlocksRef.get();
     console.log('📊 Firestore query completed, unlocks found:', snapshot.docs.length);
-    
+
     if (snapshot.empty) {
       console.log('✅ No unlocks found for user:', userId, '- returning empty array');
       return res.status(200).json({
@@ -166,7 +165,7 @@ export const getUserUnlocks = async (req, res) => {
       code: error.code,
       details: error.details
     });
-    
+
     // Return empty array instead of 500 error for any Firestore issues
     console.log('🔄 Returning empty array due to error');
     return res.status(200).json({
@@ -205,10 +204,10 @@ export const unlockLogo = async (req, res) => {
     // PRICING LOGIC FIRST - Determine cost based on tier (case-insensitive)
     const tier = selectedTier;
     console.log("Processing tier:", tier);
-    
+
     const cost = tier.toLowerCase() === 'exclusive' ? 35 : (tier.toLowerCase() === 'premium' ? 20 : 10);
     console.log("Calculated cost:", cost);
-    
+
     if (!tier || (tier.toLowerCase() !== 'exclusive' && tier.toLowerCase() !== 'premium' && tier.toLowerCase() !== 'standard')) {
       console.log('❌ Invalid tier selected:', tier);
       return res.status(400).json({
@@ -273,7 +272,7 @@ export const unlockLogo = async (req, res) => {
 
     const generationData = generationDoc.data();
     const logoUrls = generationData.logoUrls || [];
-    
+
     if (logoIndex >= logoUrls.length) {
       return res.status(400).json({
         success: false,
@@ -296,9 +295,9 @@ export const unlockLogo = async (req, res) => {
     // EXCLUSIVE PLAN: Trigger vectorization BEFORE saving to database
     if (selectedTier.toLowerCase() === 'exclusive') {
       console.log('🚀 VECTORIZATION STARTING FOR SESSION:', generationId);
-      
+
       let svgUrl = null;
-      
+
       try {
         // 1. Fetch the image as a Blob using native fetch
         const imageRes = await fetch(originalImageUrl);
@@ -314,17 +313,17 @@ export const unlockLogo = async (req, res) => {
 
         // 4. Send request using NATIVE fetch
         const response = await fetch('https://vectorizer.ai/api/v1/vectorize?mode=test&out.svg.simplify=true', {
-            method: 'POST',
-            headers: {
-                'Authorization': `Basic ${authString}` 
-                // Do NOT set Content-Type header manually, fetch will do it with the correct boundary
-            },
-            body: formData
+          method: 'POST',
+          headers: {
+            'Authorization': `Basic ${authString}`
+            // Do NOT set Content-Type header manually, fetch will do it with the correct boundary
+          },
+          body: formData
         });
 
         if (!response.ok) {
-            const errorMsg = await response.text();
-            throw new Error(`Vectorizer API Error: ${response.status} - ${errorMsg}`);
+          const errorMsg = await response.text();
+          throw new Error(`Vectorizer API Error: ${response.status} - ${errorMsg}`);
         }
 
         // 1. Get the result as an arrayBuffer
@@ -334,48 +333,48 @@ export const unlockLogo = async (req, res) => {
         // 2. CHECK: Agar response XML/SVG hai (Test mode mein yahi hota hai)
         const firstFewChars = vectorizedBuffer.toString('utf8', 0, 50);
         let cloudinaryResponse;
-        
+
         if (firstFewChars.includes('<?xml') || firstFewChars.includes('<svg')) {
-            console.log("✅ Received SVG/XML data. Saving as SVG...");
-            
-            const svgSizeBytes = vectorizedBuffer.length;
+          console.log("✅ Received SVG/XML data. Saving as SVG...");
 
-            // Validate SVG size (must be under 5MB)
-            const maxSizeBytes = 5 * 1024 * 1024; // 5MB
-            if (svgSizeBytes > maxSizeBytes) {
-              throw new Error(`SVG size (${svgSizeBytes} bytes) exceeds 5MB limit`);
-            }
+          const svgSizeBytes = vectorizedBuffer.length;
 
-            // Upload SVG to Cloudinary
-            console.log('☁️ Uploading SVG to Cloudinary...');
-            try {
-                cloudinaryResponse = await cloudinary.uploader.upload(`data:image/svg+xml;base64,${vectorizedBuffer.toString('base64')}`, {
-                    folder: '1dollarlogo/vectorized-logos',
-                    public_id: `vectorized_${userId}_${generationId}_${logoIndex}`,
-                    resource_type: 'raw', // <--- YE SABSE ZAROORI HAI (SVG ko raw treat karna parta hai)
-                    format: 'svg'        // <--- Force extension to SVG
-                });
-                console.log('✅ Cloudinary upload successful:', cloudinaryResponse.secure_url);
-            } catch (uploadError) {
-                console.error('❌ Cloudinary upload failed:', uploadError);
-                
-                // Check if size is the issue
-                if (uploadError.message && uploadError.message.includes('size') || 
-                    uploadError.message && uploadError.message.includes('limit') ||
-                    uploadError.message && uploadError.message.includes('too large')) {
-                    console.error('🔍 Size issue detected - SVG size:', svgSizeBytes, 'bytes');
-                    throw new Error(`SVG file size (${svgSizeBytes} bytes) is too large for upload. Maximum allowed is 5MB.`);
-                } else {
-                    console.error('🔍 Other upload error:', uploadError.message);
-                    throw new Error(`Failed to upload SVG to Cloudinary: ${uploadError.message}`);
-                }
+          // Validate SVG size (must be under 5MB)
+          const maxSizeBytes = 5 * 1024 * 1024; // 5MB
+          if (svgSizeBytes > maxSizeBytes) {
+            throw new Error(`SVG size (${svgSizeBytes} bytes) exceeds 5MB limit`);
+          }
+
+          // Upload SVG to Cloudinary
+          console.log('☁️ Uploading SVG to Cloudinary...');
+          try {
+            cloudinaryResponse = await cloudinary.uploader.upload(`data:image/svg+xml;base64,${vectorizedBuffer.toString('base64')}`, {
+              folder: '1dollarlogo/vectorized-logos',
+              public_id: `vectorized_${userId}_${generationId}_${logoIndex}`,
+              resource_type: 'raw', // <--- YE SABSE ZAROORI HAI (SVG ko raw treat karna parta hai)
+              format: 'svg'        // <--- Force extension to SVG
+            });
+            console.log('✅ Cloudinary upload successful:', cloudinaryResponse.secure_url);
+          } catch (uploadError) {
+            console.error('❌ Cloudinary upload failed:', uploadError);
+
+            // Check if size is the issue
+            if (uploadError.message && uploadError.message.includes('size') ||
+              uploadError.message && uploadError.message.includes('limit') ||
+              uploadError.message && uploadError.message.includes('too large')) {
+              console.error('🔍 Size issue detected - SVG size:', svgSizeBytes, 'bytes');
+              throw new Error(`SVG file size (${svgSizeBytes} bytes) is too large for upload. Maximum allowed is 5MB.`);
+            } else {
+              console.error('🔍 Other upload error:', uploadError.message);
+              throw new Error(`Failed to upload SVG to Cloudinary: ${uploadError.message}`);
             }
+          }
         } else {
-            // Agar JSON error aata hai toh yahan handle karein
-            console.log("Received other format.");
-            const responseText = vectorizedBuffer.toString('utf8');
-            console.log("Response preview:", responseText.substring(0, 200));
-            throw new Error(`Unexpected response format. Expected SVG/XML but received: ${responseText.substring(0, 100)}...`);
+          // Agar JSON error aata hai toh yahan handle karein
+          console.log("Received other format.");
+          const responseText = vectorizedBuffer.toString('utf8');
+          console.log("Response preview:", responseText.substring(0, 200));
+          throw new Error(`Unexpected response format. Expected SVG/XML but received: ${responseText.substring(0, 100)}...`);
         }
 
         svgUrl = cloudinaryResponse.secure_url;
@@ -390,7 +389,7 @@ export const unlockLogo = async (req, res) => {
 
       } catch (error) {
         console.error("Vectorization Failed:", error.message);
-        
+
         try {
           // Refund full 35 OPPAL for Exclusive tier
           await db.collection('users').doc(userId).update({
@@ -398,17 +397,17 @@ export const unlockLogo = async (req, res) => {
           });
 
           console.log('💸 Refunded full 35 OPPAL due to vectorization failure');
-          
+
           return res.status(500).json({
             success: false,
             message: 'Vectorization failed for Exclusive tier. Credits refunded.',
             error: error.message,
             creditsRefunded: 35
           });
-          
+
         } catch (refundError) {
           console.error('❌ Credit refund failed:', refundError);
-          
+
           return res.status(500).json({
             success: false,
             message: 'Vectorization failed and credit refund failed. Please contact support.',
@@ -427,7 +426,7 @@ export const unlockLogo = async (req, res) => {
     // FINAL CHECK: For Exclusive tier, ensure svgUrl is available before sending response
     if (selectedTier.toLowerCase() === 'exclusive') {
       console.log("Vectorization result:", unlockData.svgUrl);
-      
+
       if (!unlockData.svgUrl) {
         console.error('❌ SVG URL missing for Exclusive tier - not sending response yet');
         return res.status(500).json({
@@ -441,8 +440,8 @@ export const unlockLogo = async (req, res) => {
 
     return res.status(200).json({
       success: true,
-      message: selectedTier.toLowerCase() === 'exclusive' && unlockData.svgUrl 
-        ? 'Exclusive logo unlocked with vectorization' 
+      message: selectedTier.toLowerCase() === 'exclusive' && unlockData.svgUrl
+        ? 'Exclusive logo unlocked with vectorization'
         : 'Logo unlocked successfully',
       data: {
         tier: selectedTier,
@@ -464,16 +463,26 @@ export const unlockLogo = async (req, res) => {
 
 export const generateBrandStrategy = async (req, res) => {
   try {
-    const { businessIdea } = req.body;
-    const userId = req.user?.uid; // Get userId from authenticated request
+    const {
 
-    // Validate input
-    if (!businessIdea || businessIdea.trim().length < 10) {
-      return res.status(400).json({
-        success: false,
-        message: 'Business idea must be at least 10 characters long'
-      });
-    }
+      brandName,
+      businessType,
+      selectedProducts,
+      selectedColors,
+      brandStyle,
+      usageLocations,
+      colorsToAvoid,
+      symbolsToInclude,
+      symbolsToAvoid,
+      selectedPlatforms,
+      contactInfo,
+      headshot,
+      flyer,
+      merch
+    } = req.body;
+    const userId = req.user?.uid;
+
+
 
     if (!userId) {
       return res.status(401).json({
@@ -492,28 +501,58 @@ export const generateBrandStrategy = async (req, res) => {
       throw new Error('OPENAI_API_KEY is not configured');
     }
 
+    const brandContext = `
+Brand Name: ${brandName || 'Not specified'}
+Business Type: ${businessType || 'Not specified'}
+Products/Services: ${selectedProducts?.join(', ') || 'Logo'}
+Brand Style: ${brandStyle?.join(', ') || 'Modern'}
+Usage Locations: ${usageLocations?.join(', ') || 'Digital'}
+Symbols to Include: ${symbolsToInclude || 'Not specified'}
+Symbols to Avoid: ${symbolsToAvoid || 'None specified'}
+Colors to Avoid: ${colorsToAvoid || 'None specified'}
+${selectedPlatforms?.length ? `Social Platforms: ${selectedPlatforms.join(', ')}` : ''}
+${contactInfo?.name ? `Contact: ${contactInfo.name}${contactInfo.title ? ', ' + contactInfo.title : ''}` : ''}
+${contactInfo?.website ? `Website: ${contactInfo.website}` : ''}
+${headshot?.photoUse ? `Headshot Use: ${headshot.photoUse}` : ''}
+${headshot?.background ? `Headshot Background: ${headshot.background}` : ''}
+${headshot?.style ? `Headshot Style: ${headshot.style}` : ''}
+${headshot?.retouchLevel ? `Retouch Level: ${headshot.retouchLevel}` : ''}
+${flyer?.headline ? `Flyer Headline: ${flyer.headline}` : ''}
+${flyer?.dateTime ? `Event Date/Time: ${flyer.dateTime}` : ''}
+${flyer?.location ? `Event Location: ${flyer.location}` : ''}
+${flyer?.offer ? `Special Offer: ${flyer.offer}` : ''}
+${merch?.productType ? `Merch Product: ${merch.productType}` : ''}
+${merch?.placement ? `Design Placement: ${merch.placement}` : ''}
+${merch?.productColor ? `Product Color: ${merch.productColor}` : ''}
+`;
+
     // Step A: Generate Brand DNA with GPT-4o
-    const systemPrompt = `You are a professional Brand Strategist and Logo Designer. Analyze the business idea and return a strict JSON object with the following structure:
+    const systemPrompt = `You are a professional Brand Strategist and Logo Designer. Analyze the business idea and user preferences to return a strict JSON object with the following structure:
 
 {
   "brandName": "extracted or suggested brand name",
-  "vibe": "brand personality and feeling (e.g., modern, playful, elegant, techy)",
+  "vibe": "brand personality and feeling based on user's style and business type",
   "colorPalette": ["#hex1", "#hex2", "#hex3", "#hex4"],
   "imagePrompts": [
-    "Flat vector logo, minimalist, [styleDescriptor] icon design, [industry] symbol, [vibe] aesthetic, white background, professional, clean lines",
-    "Flat vector logo, minimalist, [styleDescriptor] wordmark typography, [industry] text-based logo, [vibe] aesthetic, white background, professional, clean lines",
-    "Flat vector logo, minimalist, [styleDescriptor] abstract geometric design, [industry] concept, [vibe] aesthetic, white background, professional, clean lines",
-    "Flat vector logo, minimalist, [styleDescriptor] modern emblem design, [industry] badge concept, [vibe] aesthetic, white background, professional, clean lines"
+    "DALL-E prompt for icon/symbol logo incorporating user preferences",
+    "DALL-E prompt for wordmark/typography logo incorporating user preferences",
+    "DALL-E prompt for abstract geometric logo incorporating user preferences",
+    "DALL-E prompt for modern emblem/badge logo incorporating user preferences"
   ]
 }
 
 Important:
 - Return ONLY valid JSON, no markdown formatting
-- Extract meaningful brand elements from the business idea
-- Create 4 distinct DALL-E prompts optimized for logo generation
-- Use professional color palette appropriate for the industry
-- Replace [styleDescriptor], [industry], and [vibe] with actual values based on the business idea
-- Ensure all prompts follow the base template structure`;
+- Incorporate user's selected brand styles: ${brandStyle?.join(', ') || 'modern'}
+- Include colors user wants: ${selectedColors?.length ? selectedColors.join(', ') : 'professional palette'}
+- AVOID colors: ${colorsToAvoid || 'neon/garish colors'}
+- Include symbols/imagery: ${symbolsToInclude || 'industry-relevant'}
+- AVOID styles: ${symbolsToAvoid || 'none'}
+- Consider usage locations: ${usageLocations?.join(', ') || 'web and print'}
+- Create 4 distinct prompts optimized for DALL-E 3 logo generation
+- Use professional color palette that matches user preferences
+- Each prompt should be detailed and specific to the business type and user preferences
+- Ensure all prompts follow best practices for AI logo generation`;
 
     const brandResponse = await openai.chat.completions.create({
       model: 'gpt-4o',
@@ -524,7 +563,7 @@ Important:
         },
         {
           role: 'user',
-          content: `Analyze this business idea: "${businessIdea}"`
+          content: `Please analyze this brand context and create custom logo generation prompts:\n\n${brandContext}`
         }
       ],
       response_format: { type: 'json_object' },
@@ -545,7 +584,7 @@ Important:
           quality: 'standard',
           style: 'vivid'
         });
-        
+
         return {
           index,
           imageUrl: response.data[0].url,
@@ -561,18 +600,18 @@ Important:
 
     // Wait for all images to be generated
     const generatedImages = await Promise.all(imagePromises);
-    
+
     // Upload images to Cloudinary for permanent storage
     console.log('☁️ Starting Cloudinary upload for', generatedImages.length, 'images');
     const cloudinaryUrls = await Promise.all(generatedImages.map(async (img, index) => {
       try {
         console.log(`📤 Uploading image ${index + 1} to Cloudinary...`);
-        
+
         // Generate a unique public ID
         const brandName = brandDNA.brandName?.replace(/[^a-zA-Z0-9]/g, '_') || 'logo';
         const timestamp = Date.now();
         const publicId = `1dollarlogo_${userId}_${brandName}_${img.style.toLowerCase()}_${timestamp}`;
-        
+
         // Upload to Cloudinary
         const result = await cloudinary.uploader.upload(img.imageUrl, {
           public_id: publicId,
@@ -583,7 +622,7 @@ Important:
           fetch_format: 'auto',
           secure: true
         });
-        
+
         console.log(`✅ Image ${index + 1} uploaded to Cloudinary:`, result.secure_url);
         return {
           ...img,
@@ -600,7 +639,7 @@ Important:
         };
       }
     }));
-    
+
     console.log('🎯 All images processed, Cloudinary URLs:', cloudinaryUrls.map(img => img.cloudinaryUrl));
 
     // Prepare the response using Cloudinary URLs
@@ -608,7 +647,6 @@ Important:
       brandName: brandDNA.brandName,
       vibe: brandDNA.vibe,
       colorPalette: brandDNA.colorPalette,
-      businessIdea: businessIdea,
       logos: cloudinaryUrls.map((img, index) => ({
         id: index,
         style: img.style,
@@ -637,17 +675,29 @@ Important:
       // Create generation document in user's generations sub-collection
       const generationData = {
         userId: userId,
-        businessIdea: businessIdea,
+        brandName: brandName,
+        businessType: businessType,
+        selectedProducts: selectedProducts,
+        selectedColors: selectedColors,
+        brandStyle: brandStyle,
+        usageLocations: usageLocations,
+        colorsToAvoid: colorsToAvoid,
+        symbolsToInclude: symbolsToInclude,
+        symbolsToAvoid: symbolsToAvoid,
+        selectedPlatforms: selectedPlatforms,
+        contactInfo: contactInfo,
+        headshot: headshot,
+        flyer: flyer,
+        merch: merch,
         brandDNA: brandDNA,
-        logoUrls: cloudinaryUrls.map(img => img.cloudinaryUrl), // Save Cloudinary URLs
-        originalUrls: cloudinaryUrls.map(img => img.imageUrl), // Keep OpenAI URLs for reference
+        logoUrls: cloudinaryUrls.map(img => img.cloudinaryUrl),
+        originalUrls: cloudinaryUrls.map(img => img.imageUrl),
         publicIds: cloudinaryUrls.map(img => img.publicId),
         createdAt: admin.firestore.FieldValue.serverTimestamp()
       };
 
       console.log('💾 Attempting to save generation data:', {
         userId: generationData.userId,
-        businessIdea: generationData.businessIdea,
         hasBrandDNA: !!generationData.brandDNA,
         logoUrlsCount: generationData.logoUrls.length,
         hasTimestamp: !!generationData.createdAt
@@ -696,14 +746,14 @@ Important:
 
   } catch (error) {
     console.error('Error generating brand strategy:', error);
-    
+
     if (error.message.includes('OPENAI_API_KEY')) {
       return res.status(500).json({
         success: false,
         message: 'OpenAI API key not configured'
       });
     }
-    
+
     res.status(500).json({
       success: false,
       message: 'Failed to generate brand strategy',
